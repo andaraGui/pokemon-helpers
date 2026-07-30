@@ -1,13 +1,19 @@
 {
   "manifest_version": 3,
   "name": "IfinityMMO Helper",
-  "version": "1.3.1",
+  "version": "1.4.1",
   "description": "",
   "action": {},
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "storage"],
+  "commands": {
+    "toggle-overlay": {
+      "suggested_key": { "default": "Ctrl+Shift+Y" },
+      "description": "Abrir/fechar o overlay do Pokemon Helper"
+    }
+  },
   "web_accessible_resources": [
     {
       "resources": ["index.html", "app.js", "battle.html", "battle.js"],
