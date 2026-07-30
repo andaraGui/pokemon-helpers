@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Matchups de Tipo</title>
+    <style>
+        :root {
+            --bg: #14161c;
+            --panel: #1c1f28;
+            --panel-2: #21242f;
+            --line: #2e3240;
+            --text: #e8e9ee;
+            --text-dim: #9198ab;
+            --accent: #ffb238;
+            --good: #57c785;
+            --bad: #e2637a;
+
+            --t-normal: #A8A77A;
+            --t-fire: #EE8130;
+            --t-water: #6390F0;
+            --t-electric: #F7D02C;
+            --t-grass: #7AC74C;
+            --t-ice: #96D9D6;
+            --t-fighting: #C22E28;
+            --t-poison: #A33EA1;
+            --t-ground: #E2BF65;
+            --t-flying: #A98FF3;
+            --t-psychic: #F95587;
+            --t-bug: #A6B91A;
+            --t-rock: #B6A136;
+            --t-ghost: #735797;
+            --t-dragon: #6F35FC;
+            --t-dark: #705746;
+            --t-steel: #B7B7CE;
+            --t-fairy: #D685AD;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 32px 20px 80px;
+        }
+
+        .wrap {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            letter-spacing: 0.02em;
+            margin: 0 0 4px;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin: 0 0 28px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 20px 22px;
+            margin-bottom: 20px;
+        }
+
+        .panel h2 {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-dim);
+            margin: 0 0 14px;
+            font-weight: 600;
+        }
+
+        .mode-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .mode-option {
+            flex: 1;
+        }
+
+        .mode-option input {
+            display: none;
+        }
+
+        .mode-option label {
+            display: block;
+            text-align: center;
+            padding: 12px 10px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background: var(--panel-2);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: border-color .15s, background .15s, color .15s;
+        }
+
+        .mode-option input:checked+label {
+            border-color: var(--accent);
+            background: rgba(255, 178, 56, 0.12);
+            color: var(--accent);
+        }
+
+        .mode-option small {
+            display: block;
+            font-weight: 400;
+            color: var(--text-dim);
+            margin-top: 2px;
+            font-size: 0.72rem;
+        }
+
+        .mode-option input:checked+label small {
+            color: inherit;
+            opacity: .75;
+        }
+
+        /* ---- Tag de tipo único: {{icon}} {{name}} + cor de fundo ---- */
+        .type-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px 4px 8px;
+            border-radius: 100px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            line-height: 1.5;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .type-tag .icon {
+            font-size: 0.95em;
+            line-height: 1;
+        }
+
+        /* ---- Tag de combo (dual-type): mesma pill, cor cortada ao meio ---- */
+        .type-tag.combo {
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+        }
+
+        .type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+            gap: 8px;
+        }
+
+        .type-chip {
+            position: relative;
+        }
+
+        .type-chip input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            margin: 0;
+            z-index: 1;
+        }
+
+        .type-chip input:disabled {
+            cursor: not-allowed;
+        }
+
+        .type-chip label {
+            display: block;
+            cursor: pointer;
+        }
+
+        .type-chip .type-tag {
+            justify-content: center;
+            width: 100%;
+            padding: 9px 8px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            filter: brightness(0.55) saturate(0.6);
+            transition: filter .15s, transform .1s, opacity .15s;
+        }
+
+        .type-chip input:checked+label .type-tag {
+            filter: brightness(1) saturate(1);
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+
+        .type-chip input:disabled+label .type-tag {
+            opacity: .3;
+            cursor: not-allowed;
+        }
+
+        .type-chip label:active .type-tag {
+            transform: scale(0.97);
+        }
+
+        button.calc {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: none;
+            background: var(--accent);
+            color: #1a1408;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        button.calc:hover {
+            filter: brightness(1.06);
+        }
+
+        button.calc:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .hint {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+
+        .hint.warn {
+            color: var(--bad);
+        }
+
+        #results {
+            display: none;
+        }
+
+        .result-row {
+            display: grid;
+            gap: 14px;
+            align-items: center;
+            padding: 12px 4px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-row.header {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            padding-bottom: 10px;
+            font-weight: 700;
+        }
+
+        /* layout modo Ataque: rank | tipo | dano | recebe */
+        .result-row.mode-ataque {
+            grid-template-columns: 34px 1fr 110px 110px;
+        }
+
+        /* layout modo Defesa: rank | tipo | contra-ataca | resiste */
+        .result-row.mode-defesa {
+            grid-template-columns: 34px 1fr 1fr 1fr;
+        }
+
+        .rank {
+            font-variant-numeric: tabular-nums;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        .rank.top {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .col-title {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            font-weight: 700;
+            display: none;
+        }
+
+        .type-name {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+        }
+
+        /* ---- linhas por faixa de dano (modo Ataque) ---- */
+        .tier-row {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            padding: 14px 4px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .tier-row:last-child {
+            border-bottom: none;
+        }
+
+        .tier-label {
+            flex: 0 0 56px;
+            padding-top: 3px;
+        }
+
+        .tier-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .tag-list.atk .type-tag {
+            box-shadow: 0 0 0 1.5px var(--good);
+        }
+
+        .tag-list.def .type-tag {
+            box-shadow: 0 0 0 1.5px var(--bad);
+        }
+
+        .empty-tag {
+            color: var(--text-dim);
+            font-size: 0.78rem;
+        }
+
+        .mult {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 7px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .mult-4 {
+            background: rgba(87, 199, 133, 0.22);
+            color: #6be3a0;
+        }
+
+        .mult-2 {
+            background: rgba(87, 199, 133, 0.14);
+            color: var(--good);
+        }
+
+        .mult-1 {
+            background: var(--panel-2);
+            color: var(--text-dim);
+        }
+
+        .mult-0-5 {
+            background: rgba(226, 99, 122, 0.14);
+            color: var(--bad);
+        }
+
+        .mult-0-25 {
+            background: rgba(226, 99, 122, 0.22);
+            color: #ff8fa3;
+        }
+
+        .mult-0 {
+            background: #000;
+            color: #fff;
+        }
+
+        .target-banner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        @media (max-width: 720px) {
+
+            .result-row.mode-ataque,
+            .result-row.mode-defesa {
+                grid-template-columns: 26px 1fr;
+            }
+
+            .result-row {
+                grid-template-areas: "rank name" ". a" ". b";
+            }
+
+            .result-row.header {
+                display: none;
+            }
+
+            .col-title {
+                display: block;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <h1>Calculadora de Matchups de Tipo</h1>
+        <p class="subtitle">Selecione o modo e os tipos. O resultado mostra todos os tipos (puros e combinados)
+            ordenados pela melhor cobertura.</p>
+
+        <div class="panel">
+            <h2>Ranquear por</h2>
+            <div class="mode-row">
+                <div class="mode-option">
+                    <input type="radio" name="mode" id="mode-ataque" value="ataque" checked>
+                    <label for="mode-ataque">Ataque<small>Você escolhe o tipo do alvo (até 2) e vê quem bate mais forte
+                            nele</small></label>
+                </div>
+                <div class="mode-option">
+                    <input type="radio" name="mode" id="mode-defesa" value="defesa">
+                    <label for="mode-defesa">Defesa<small>Você escolhe tipos de ataque a enfrentar e vê quem resiste
+                            mais</small></label>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2 id="type-panel-title">Tipo do alvo (até 2)</h2>
+            <div class="type-grid" id="type-grid"></div>
+        </div>
+
+        <p class="hint" id="hint">Selecione ao menos um tipo acima.</p>
+
+        <div class="panel" id="results">
+            <h2 id="results-title">Resultado</h2>
+            <div id="results-body"></div>
+        </div>
+    </div>
+
+    <script>
+        const TYPES = [
+            'normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison',
+            'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'
+        ];
+
+        const LABELS = {
+            normal: 'Normal', fire: 'Fogo', water: 'Água', electric: 'Elétrico', grass: 'Planta',
+            ice: 'Gelo', fighting: 'Lutador', poison: 'Venenoso', ground: 'Terra', flying: 'Voador',
+            psychic: 'Psíquico', bug: 'Inseto', rock: 'Pedra', ghost: 'Fantasma', dragon: 'Dragão',
+            dark: 'Sombrio', steel: 'Aço', fairy: 'Fada'
+        };
+
+        const ICONS = {
+            normal: '⭐', fire: '🔥', water: '💧', electric: '⚡', grass: '🌿',
+            ice: '❄️', fighting: '👊', poison: '☠️', ground: '🌍', flying: '🌪️',
+            psychic: '🔮', bug: '🐛', rock: '🪨', ghost: '👻', dragon: '🐉',
+            dark: '🌙', steel: '⚙️', fairy: '✨'
+        };
+
+        // ---- componente de tag: 1 tipo = pill sólida; 2 tipos = pill cortada na cor ----
+        function typeTagHTML(types) {
+            if (!Array.isArray(types)) types = [types];
+            const isCombo = types.length === 2;
+            const bg = isCombo
+                ? `linear-gradient(90deg, var(--t-${types[0]}) 50%, var(--t-${types[1]}) 50%)`
+                : `var(--t-${types[0]})`;
+            const icons = types.map(t => ICONS[t]).join('');
+            const names = types.map(t => LABELS[t]).join('/');
+            return `<span class="type-tag${isCombo ? ' combo' : ''}" style="background:${bg}">` +
+                `<span class="icon">${icons}</span>${names}` +
+                `</span>`;
+        }
+
+        const CHART = {
+            normal: { rock: 0.5, ghost: 0, steel: 0.5 },
+            fire: { fire: 0.5, water: 0.5, grass: 2, ice: 2, bug: 2, rock: 0.5, dragon: 0.5, steel: 2 },
+            water: { fire: 2, water: 0.5, grass: 0.5, ground: 2, rock: 2, dragon: 0.5 },
+            electric: { water: 2, electric: 0.5, grass: 0.5, ground: 0, flying: 2, dragon: 0.5 },
+            grass: { fire: 0.5, water: 2, grass: 0.5, poison: 0.5, ground: 2, flying: 0.5, bug: 0.5, rock: 2, dragon: 0.5, steel: 0.5 },
+            ice: { fire: 0.5, water: 0.5, grass: 2, ice: 0.5, ground: 2, flying: 2, dragon: 2, steel: 0.5 },
+            fighting: { normal: 2, ice: 2, poison: 0.5, flying: 0.5, psychic: 0.5, bug: 0.5, rock: 2, ghost: 0, dark: 2, steel: 2, fairy: 0.5 },
+            poison: { grass: 2, poison: 0.5, ground: 0.5, rock: 0.5, ghost: 0.5, steel: 0, fairy: 2 },
+            ground: { fire: 2, electric: 2, grass: 0.5, poison: 2, flying: 0, bug: 0.5, rock: 2, steel: 2 },
+            flying: { electric: 0.5, grass: 2, fighting: 2, bug: 2, rock: 0.5, steel: 0.5 },
+            psychic: { fighting: 2, poison: 2, psychic: 0.5, dark: 0, steel: 0.5 },
+            bug: { fire: 0.5, grass: 2, fighting: 0.5, poison: 0.5, flying: 0.5, psychic: 2, ghost: 0.5, dark: 2, steel: 0.5, fairy: 0.5 },
+            rock: { fire: 2, ice: 2, fighting: 0.5, ground: 0.5, flying: 2, bug: 2, steel: 0.5 },
+            ghost: { normal: 0, psychic: 2, ghost: 2, dark: 0.5 },
+            dragon: { dragon: 2, steel: 0.5, fairy: 0 },
+            dark: { fighting: 0.5, psychic: 2, ghost: 2, dark: 0.5, fairy: 0.5 },
+            steel: { fire: 0.5, water: 0.5, electric: 0.5, ice: 2, rock: 2, steel: 0.5, fairy: 2 },
+            fairy: { fire: 0.5, fighting: 2, poison: 0.5, dragon: 2, dark: 2, steel: 0.5 },
+        };
+
+        // multiplicador de dano de UM tipo atacante contra um defensor (1 ou 2 tipos)
+        function defMultiplier(attacker, defenderTypes) {
+            const table = CHART[attacker] || {};
+            return defenderTypes.reduce((acc, def) => acc * (table[def] ?? 1), 1);
+        }
+
+        // todos os tipos possíveis: 18 puros + 153 combinações duplas
+        function allCombos() {
+            const combos = TYPES.map(t => [t]);
+            for (let i = 0; i < TYPES.length; i++) {
+                for (let j = i + 1; j < TYPES.length; j++) combos.push([TYPES[i], TYPES[j]]);
+            }
+            return combos;
+        }
+        const COMBOS = allCombos();
+
+        function multClass(v) {
+            if (v === 4) return 'mult-4';
+            if (v === 2) return 'mult-2';
+            if (v === 1) return 'mult-1';
+            if (v === 0.5) return 'mult-0-5';
+            if (v === 0.25) return 'mult-0-25';
+            return 'mult-0';
+        }
+        function multLabel(v) {
+            if (v === 0.5) return '½×';
+            if (v === 0.25) return '¼×';
+            return v + '×';
+        }
+        function multBadge(v) {
+            return `<span class="mult ${multClass(v)}">${multLabel(v)}</span>`;
+        }
+
+        // ---------- grid de checkboxes ----------
+        const grid = document.getElementById('type-grid');
+        TYPES.forEach(t => {
+            const chip = document.createElement('div');
+            chip.className = 'type-chip';
+            chip.innerHTML = `
+    <input type="checkbox" id="chk-${t}" value="${t}">
+    <label for="chk-${t}">${typeTagHTML(t)}</label>
+  `;
+            grid.appendChild(chip);
+        });
+
+        const hint = document.getElementById('hint');
+        const typePanelTitle = document.getElementById('type-panel-title');
+
+        function getSelectedTypes() {
+            return TYPES.filter(t => document.getElementById(`chk-${t}`).checked);
+        }
+        function getMode() {
+            return document.querySelector('input[name="mode"]:checked').value;
+        }
+
+        // Aplica as regras de seleção de cada modo:
+        // - "ataque": no máx. 2 tipos marcados (representam o(s) tipo(s) do ALVO, um único Pokémon)
+        // - "defesa": qualquer quantidade (representam tipos de ataque INDEPENDENTES a enfrentar)
+        function enforceModeConstraints() {
+            const mode = getMode();
+            const selected = getSelectedTypes();
+
+            if (mode === 'ataque') {
+                typePanelTitle.textContent = 'Tipo do alvo (até 2)';
+                // se tiver mais de 2 marcados (ex: veio do modo defesa), desmarca os excedentes
+                if (selected.length > 2) {
+                    selected.slice(2).forEach(t => { document.getElementById(`chk-${t}`).checked = false; });
+                }
+                const nowSelected = getSelectedTypes();
+                const atLimit = nowSelected.length >= 2;
+                TYPES.forEach(t => {
+                    const chk = document.getElementById(`chk-${t}`);
+                    chk.disabled = atLimit && !chk.checked;
+                });
+            } else {
+                typePanelTitle.textContent = 'Tipos de ataque a enfrentar';
+                TYPES.forEach(t => { document.getElementById(`chk-${t}`).disabled = false; });
+            }
+
+            const n = getSelectedTypes().length;
+            if (n === 0) {
+                hint.textContent = 'Selecione ao menos um tipo acima.';
+            } else if (mode === 'ataque') {
+                hint.textContent = n === 1
+                    ? '1 tipo selecionado (alvo mono-tipo).'
+                    : '2 tipos selecionados (alvo dual-type).';
+            } else {
+                hint.textContent = `${n} tipo(s) de ataque selecionado(s).`;
+            }
+            hint.classList.remove('warn');
+
+            calculate();
+        }
+
+        grid.addEventListener('change', enforceModeConstraints);
+        document.getElementById('mode-ataque').addEventListener('change', enforceModeConstraints);
+        document.getElementById('mode-defesa').addEventListener('change', enforceModeConstraints);
+        enforceModeConstraints();
+
+        function calculate() {
+            const selected = getSelectedTypes();
+            const mode = getMode();
+
+            if (selected.length === 0) {
+                document.getElementById('results').style.display = 'none';
+                return;
+            }
+
+            if (mode === 'ataque') {
+                // "selected" = o(s) tipo(s) do ALVO (1 Pokémon, até 2 tipos combinados)
+                // Um golpe sempre tem 1 tipo só, então quem ataca é sempre um tipo puro —
+                // não faz sentido considerar combos aqui.
+                const entries = TYPES.map(t => {
+                    const dano = defMultiplier(t, selected);
+                    // recebe: pior multiplicador que o ALVO causaria de volta nesse tipo puro
+                    const recebe = Math.max(...selected.map(s => defMultiplier(s, [t])));
+                    return { type: t, dano, recebe };
+                });
+                renderAtaque(entries, selected);
+            } else {
+                // "selected" = lista de tipos de ATAQUE independentes a enfrentar
+                const entries = COMBOS.map(combo => {
+                    // recebe: PIOR multiplicador que esse combo toma de qualquer um dos tipos selecionados
+                    const recebe = Math.max(...selected.map(s => defMultiplier(s, combo)));
+                    return { combo, recebe };
+                });
+                renderDefesa(entries, selected);
+            }
+        }
+
+        function renderAtaque(entries, target) {
+            const body = document.getElementById('results-body');
+            const title = document.getElementById('results-title');
+            title.textContent = 'Resultado — tipos agrupados por dano causado no alvo';
+
+            const banner = `<div class="target-banner">Alvo: ${typeTagHTML(target)}</div>`;
+
+            const TIERS = [4, 2, 1, 0.5, 0.25, 0];
+            const tierRows = TIERS.map(tierValue => {
+                const group = entries
+                    .filter(e => e.dano === tierValue)
+                    .sort((a, b) => a.recebe - b.recebe); // dentro da faixa, quem recebe menos vem primeiro
+
+                if (group.length === 0) return '';
+
+                const tags = group.map(e => typeTagHTML(e.type)).join('');
+
+                return `
+      <div class="tier-row">
+        <div class="tier-label">${multBadge(tierValue)}</div>
+        <div class="tier-list">${tags}</div>
+      </div>
+    `;
+            }).join('');
+
+            body.innerHTML = banner + tierRows;
+            document.getElementById('results').style.display = 'block';
+        }
+
+        // mesmas faixas de multiplicador do Ataque, mas cores invertidas:
+        // aqui, multiplicador BAIXO é bom (você recebe pouco dano) e ALTO é ruim.
+        function multClassDefesa(v) {
+            if (v === 0 || v === 0.25) return 'mult-4';   // melhor caso: imune ou 1/4
+            if (v === 0.5) return 'mult-2';                // resiste
+            if (v === 1) return 'mult-1';                  // neutro
+            if (v === 2) return 'mult-0-5';                // fraco contra
+            return 'mult-0-25';                            // v === 4, pior caso
+        }
+        function multBadgeDefesa(v) {
+            return `<span class="mult ${multClassDefesa(v)}">${multLabel(v)}</span>`;
+        }
+
+        function renderDefesa(entries, selected) {
+            const body = document.getElementById('results-body');
+            const title = document.getElementById('results-title');
+            title.textContent = 'Resultado — tipos agrupados pelo pior dano recebido';
+
+            const banner = `<div class="target-banner">Enfrentando: ${selected.map(t => typeTagHTML(t)).join(' ')}</div>`;
+
+            // ordem do melhor pro pior caso de defesa
+            const TIERS = [0, 0.25, 0.5, 1, 2, 4];
+
+            const tierRows = TIERS.map(tierValue => {
+                const group = entries.filter(e => e.recebe === tierValue);
+                if (group.length === 0) return '';
+
+                const tags = group.map(e => typeTagHTML(e.combo)).join('');
+
+                return `
+      <div class="tier-row">
+        <div class="tier-label">${multBadgeDefesa(tierValue)}</div>
+        <div class="tier-list">${tags}</div>
+      </div>
+    `;
+            }).join('');
+
+            body.innerHTML = banner + tierRows;
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
