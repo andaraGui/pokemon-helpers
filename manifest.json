@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Calculadora de Matchups de Tipo",
+  "version": "1.0.0",
+  "description": "Calculadora de vantagens e desvantagens de tipo do Pokémon, sobreposta na página atual.",
+  "action": {},
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["activeTab", "scripting"],
+  "web_accessible_resources": [
+    {
+      "resources": ["index.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
