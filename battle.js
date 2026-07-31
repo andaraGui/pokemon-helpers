@@ -1,5 +1,27 @@
 const STAT_KEYS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
 
+const TYPE_MAPPER = {
+    0: 'normal',
+    1: 'fighting',
+    2: 'flying',
+    3: 'poison',
+    4: 'ground',
+    5: 'rock',
+    6: 'insect',
+    7: 'ghost',
+    8: 'steel',
+    9: 'bug',
+    10: 'fire',
+    11: 'water',
+    12: 'grass',
+    13: 'electric',
+    14: 'psychic',
+    15: 'ice',
+    16: 'dragon',
+    17: 'dark',
+    18: 'fairy'
+}
+
 const OUTCOME_LABELS = {
     fled: 'Fugiu',
     caught: 'Capturado',
@@ -55,7 +77,16 @@ function render(data) {
 
     const stats = foe.stats || {};
     const ivs = foe.ivs || {};
+    const ivPercent = STAT_KEYS.reduce((acc, k) => {
+        if (ivs[k] !== undefined) acc += ivs[k];
+        return acc;
+    }, 0) / (STAT_KEYS.length * 31);
     const moves = (data.next && data.next.allowed && data.next.allowed.moves) || [];
+
+    function typeNamesFromIds(types) {
+        if (!Array.isArray(types) || types.length === 0) return [];
+        return [...new Set(types.map((typeId) => TYPE_MAPPER[typeId]).filter(Boolean))];
+    }
 
     let html = '';
     html += row('Espécie', foe.name || foe.species);
@@ -65,8 +96,11 @@ function render(data) {
     html += hpGauge(foe.hp, foe.maxHp);
     html += row('Habilidade', foe.ability || '-');
     html += row('Natureza', foe.nature || '-');
+    html += row('IVs (%)', `${Math.round(ivPercent * 100)}%`);
     html += row('Item', foe.heldItem || '-');
-    html += row('Tipos (id)', (foe.types || []).join(' / ') || '-');
+
+    const typeNames = typeNamesFromIds(foe.types);
+    html += row('Tipo(s)', typeNames.length ? typeNames.join(' / ') : '-');
 
     html += '<h2>Stats</h2>';
     STAT_KEYS.forEach((k) => {
