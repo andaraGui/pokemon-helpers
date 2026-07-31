@@ -47,6 +47,12 @@
         battleBtn.title = 'Encontro';
         battleBtn.dataset.view = 'battle';
 
+        const myPokemonsBtn = document.createElement('button');
+        myPokemonsBtn.className = 'ph-icon-btn ph-view-btn';
+        myPokemonsBtn.textContent = '🖥️';
+        myPokemonsBtn.title = 'Meus Pokémons';
+        myPokemonsBtn.dataset.view = 'myPokemons';
+
         const settingsBtn = document.createElement('button');
         settingsBtn.className = 'ph-icon-btn ph-view-btn pxl-icon-btn';
         settingsBtn.textContent = '⚙️';
@@ -63,6 +69,7 @@
 
         header.appendChild(calcBtn);
         header.appendChild(battleBtn);
+        header.appendChild(myPokemonsBtn);
         header.appendChild(settingsBtn);
         header.appendChild(spacer);
         header.appendChild(collapseBtn);
@@ -81,10 +88,16 @@
         battleFrame.className = 'ph-frame';
         battleFrame.src = chrome.runtime.getURL('battle.html');
 
+        const myPokemonsFrame = document.createElement('iframe');
+        myPokemonsFrame.id = 'pokemon-myPokemons-frame';
+        myPokemonsFrame.className = 'ph-frame';
+        myPokemonsFrame.src = chrome.runtime.getURL('myPokemons.html');
+
         const settingsPanel = buildSettingsPanel(settings, container);
 
         body.appendChild(calcFrame);
         body.appendChild(battleFrame);
+        body.appendChild(myPokemonsFrame);
         body.appendChild(settingsPanel);
 
         container.appendChild(bubble);
@@ -104,17 +117,29 @@
             setActiveView(btn.dataset.view, container);
         });
 
-        if (!window.__pkmnHelperBattleListenerAdded) {
-            window.__pkmnHelperBattleListenerAdded = true;
-            window.addEventListener('pkmn-helper-battle-data', (ev) => {
+        if (!window.__pkmnHelperPayloadListenerAdded) {
+            window.__pkmnHelperPayloadListenerAdded = true;
+
+            const handleHelperPayload = (ev) => {
                 const data = ev.detail;
-                const frame = document.getElementById('pokemon-battle-frame');
-                if (frame) frame.contentWindow.postMessage({ type: 'battle-data', payload: data }, '*');
+                const battleFrame = document.getElementById('pokemon-battle-frame');
+                const myPokemonsFrame = document.getElementById('pokemon-myPokemons-frame');
+                if (battleFrame) battleFrame.contentWindow.postMessage({ type: 'battle-data', payload: data }, '*');
+                if (myPokemonsFrame) myPokemonsFrame.contentWindow.postMessage({ type: 'character-data', payload: data }, '*');
 
                 const overlay = document.getElementById(ID);
                 if (!overlay) return;
 
+                const isCharacterPayload = !!(data.party || data.pc);
                 const battleEnded = !!(data.state && data.state.over === true);
+
+                if (isCharacterPayload) {
+                    if (overlay.classList.contains('collapsed')) {
+                        setCollapsed(overlay, currentSettings(overlay), false);
+                    }
+                    setActiveView('myPokemons', overlay);
+                    return;
+                }
 
                 // battleEnded checado primeiro de propósito: a resposta de fim de
                 // batalha (ex: fugir) também pode trazer um "foe.stats" completo
@@ -123,14 +148,15 @@
                 if (battleEnded) {
                     setActiveView('calc', overlay);
                 } else if (data.foe && data.foe.stats) {
-                    // um encontro relevante justifica ocupar espaço na tela mesmo
-                    // se o usuário tinha recolhido a bolha antes
                     if (overlay.classList.contains('collapsed')) {
                         setCollapsed(overlay, currentSettings(overlay), false);
                     }
                     setActiveView('battle', overlay);
                 }
-            });
+            };
+
+            window.addEventListener('pkmn-helper-battle-data', handleHelperPayload);
+            window.addEventListener('pkmn-helper-character-data', handleHelperPayload);
         }
     }
 
@@ -351,11 +377,13 @@
     function setActiveView(view, container) {
         const calc = container.querySelector('#pokemon-calc-frame');
         const battle = container.querySelector('#pokemon-battle-frame');
+        const myPokemons = container.querySelector('#pokemon-myPokemons-frame');
         const settingsPanel = container.querySelector('#pokemon-settings-panel');
-        if (!calc || !battle || !settingsPanel) return;
+        if (!calc || !battle || !myPokemons || !settingsPanel) return;
 
         calc.style.display = view === 'calc' ? 'block' : 'none';
         battle.style.display = view === 'battle' ? 'block' : 'none';
+        myPokemons.style.display = view === 'myPokemons' ? 'block' : 'none';
         settingsPanel.style.display = view === 'settings' ? 'block' : 'none';
 
         container.querySelectorAll('.ph-view-btn').forEach((btn) => {

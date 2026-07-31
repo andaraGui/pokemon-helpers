@@ -16,7 +16,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["index.html", "app.js", "battle.html", "battle.js", "pixel-theme.css"],
+      "resources": ["index.html", "app.js", "battle.html", "battle.js", "pixel-theme.css", "myPokemons.html", "myPokemons.js"],
       "matches": ["<all_urls>"]
     }
   ]
