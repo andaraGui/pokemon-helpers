@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Matchups de Tipo</title>
+    <link rel="stylesheet" href="pixel-theme.css">
     <style>
         :root {
             --bg: #14161c;
@@ -45,7 +46,7 @@
             margin: 0;
             background: var(--bg);
             color: var(--text);
-            font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Press Start 2P', 'Courier New', ui-monospace, monospace;
             padding: 32px 20px 80px;
         }
 
@@ -55,15 +56,20 @@
         }
 
         h1 {
-            font-size: 1.5rem;
             letter-spacing: 0.02em;
             margin: 0 0 4px;
         }
 
+        h1.pxl-heading {
+            font-size: var(--pxl-fs-lg);
+            line-height: 1.7;
+        }
+
         .subtitle {
             color: var(--text-dim);
-            font-size: 0.9rem;
-            margin: 0 0 28px;
+            font-size: var(--pxl-fs-sm);
+            line-height: 1.6;
+            margin: 0 0 20px;
         }
 
         .panel {
@@ -75,7 +81,7 @@
         }
 
         .panel h2 {
-            font-size: 0.72rem;
+            font-size: var(--pxl-fs-xs);
             text-transform: uppercase;
             letter-spacing: 0.12em;
             color: var(--text-dim);
@@ -88,44 +94,9 @@
             gap: 10px;
         }
 
-        .mode-option {
+        .mode-row .toggle-pill {
             flex: 1;
-        }
-
-        .mode-option input {
-            display: none;
-        }
-
-        .mode-option label {
-            display: block;
-            text-align: center;
-            padding: 12px 10px;
-            border-radius: 10px;
-            border: 1px solid var(--line);
-            background: var(--panel-2);
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: border-color .15s, background .15s, color .15s;
-        }
-
-        .mode-option input:checked+label {
-            border-color: var(--accent);
-            background: rgba(255, 178, 56, 0.12);
-            color: var(--accent);
-        }
-
-        .mode-option small {
-            display: block;
-            font-weight: 400;
-            color: var(--text-dim);
-            margin-top: 2px;
-            font-size: 0.72rem;
-        }
-
-        .mode-option input:checked+label small {
-            color: inherit;
-            opacity: .75;
+            justify-content: center;
         }
 
         .checkbox-row {
@@ -133,23 +104,36 @@
             align-items: center;
             gap: 8px;
             margin-top: 12px;
-            font-size: 0.85rem;
+            font-size: var(--pxl-fs-sm);
             color: var(--text-dim);
             cursor: pointer;
             user-select: none;
         }
 
         .checkbox-row input[type="checkbox"] {
-            width: 17px;
-            height: 17px;
-            accent-color: var(--accent);
+            appearance: none;
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            flex: 0 0 auto;
+            margin: 0;
+            border: 2px solid #000;
+            border-radius: 0;
+            background: var(--panel-2);
+            box-shadow: 2px 2px 0 0 #000;
             cursor: pointer;
+            position: relative;
         }
 
-        .checkbox-row small {
-            display: block;
-            opacity: .7;
-            font-size: 0.78em;
+        .checkbox-row input[type="checkbox"]:checked {
+            background: var(--accent);
+        }
+
+        .checkbox-row input[type="checkbox"]:checked::after {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            background: #1a1408;
         }
 
         .checkbox-row.disabled-note {
@@ -167,7 +151,7 @@
             gap: 5px;
             padding: 4px 10px 4px 8px;
             border-radius: 100px;
-            font-size: 0.78rem;
+            font-size: var(--pxl-fs-sm);
             font-weight: 700;
             color: #1a1a1a;
             line-height: 1.5;
@@ -187,8 +171,8 @@
 
         .type-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+            gap: 6px;
         }
 
         .type-chip {
@@ -217,9 +201,9 @@
         .type-chip .type-tag {
             justify-content: center;
             width: 100%;
-            padding: 9px 8px;
+            padding: 6px 4px;
             border-radius: 8px;
-            font-size: 0.82rem;
+            font-size: var(--pxl-fs-xs);
             cursor: pointer;
             filter: brightness(0.55) saturate(0.6);
             transition: filter .15s, transform .1s, opacity .15s;
@@ -264,7 +248,8 @@
 
         .hint {
             color: var(--text-dim);
-            font-size: 0.8rem;
+            font-size: var(--pxl-fs-sm);
+            line-height: 1.6;
             margin-top: 10px;
         }
 
@@ -274,6 +259,12 @@
 
         #results {
             display: none;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--line);
+            margin: 18px 0;
         }
 
         .result-row {
@@ -289,7 +280,7 @@
         }
 
         .result-row.header {
-            font-size: 0.68rem;
+            font-size: var(--pxl-fs-xs);
             text-transform: uppercase;
             letter-spacing: 0.1em;
             color: var(--text-dim);
@@ -310,7 +301,7 @@
         .rank {
             font-variant-numeric: tabular-nums;
             color: var(--text-dim);
-            font-size: 0.85rem;
+            font-size: var(--pxl-fs-base);
         }
 
         .rank.top {
@@ -319,7 +310,7 @@
         }
 
         .col-title {
-            font-size: 0.68rem;
+            font-size: var(--pxl-fs-xs);
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: var(--text-dim);
@@ -382,7 +373,7 @@
 
         .empty-tag {
             color: var(--text-dim);
-            font-size: 0.78rem;
+            font-size: var(--pxl-fs-sm);
         }
 
         .mult {
@@ -391,7 +382,7 @@
             border-radius: 7px;
             font-weight: 800;
             font-variant-numeric: tabular-nums;
-            font-size: 0.85rem;
+            font-size: var(--pxl-fs-base);
             text-align: center;
         }
 
@@ -430,7 +421,7 @@
             align-items: center;
             gap: 10px;
             margin-bottom: 4px;
-            font-size: 0.85rem;
+            font-size: var(--pxl-fs-sm);
             color: var(--text-dim);
         }
 
@@ -449,7 +440,7 @@
         table.type-chart td {
             text-align: center;
             padding: 5px 6px;
-            font-size: 0.72rem;
+            font-size: var(--pxl-fs-xs);
             font-weight: 700;
             font-variant-numeric: tabular-nums;
             border: 1px solid var(--bg);
@@ -482,7 +473,7 @@
 
         table.type-chart .type-tag.mini {
             padding: 3px 5px;
-            font-size: 0.85rem;
+            font-size: var(--pxl-fs-md);
             border-radius: 6px;
         }
 
@@ -550,7 +541,7 @@
         }
 
         .chart-filter-label {
-            font-size: 0.68rem;
+            font-size: var(--pxl-fs-xs);
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: var(--text-dim);
@@ -560,18 +551,8 @@
 
         .chart-filter input[type="text"] {
             width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid var(--line);
-            background: var(--panel-2);
-            color: var(--text);
-            font-size: 0.85rem;
             margin-bottom: 8px;
-        }
-
-        .chart-filter input[type="text"]:focus {
-            outline: none;
-            border-color: var(--accent);
+            box-sizing: border-box;
         }
 
         .tag-chips {
@@ -599,7 +580,7 @@
             cursor: pointer;
             padding: 0 10px;
             border-radius: 0 100px 100px 0;
-            font-size: 0.85rem;
+            font-size: var(--pxl-fs-base);
             line-height: 1;
         }
 
@@ -613,31 +594,11 @@
             margin-bottom: 8px;
         }
 
-        .toggle-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 100px;
-            border: 1px solid var(--line);
-            background: var(--panel-2);
-            font-size: 0.78rem;
-            color: var(--text-dim);
-            cursor: pointer;
-            user-select: none;
+        .chart-filter-options .toggle-pill {
+            flex: 1;
+            justify-content: center;
         }
 
-        .toggle-pill input {
-            display: none;
-        }
-
-        .toggle-pill:has(input:checked),
-        .toggle-pill.active {
-            border-color: var(--accent);
-            background: rgba(255, 178, 56, 0.12);
-            color: var(--accent);
-            font-weight: 700;
-        }
 
         .autocomplete-wrap {
             position: relative;
@@ -675,7 +636,7 @@
 
         .autocomplete-empty {
             padding: 10px;
-            font-size: 0.8rem;
+            font-size: var(--pxl-fs-sm);
             color: var(--text-dim);
         }
 
@@ -712,56 +673,52 @@
 
 <body>
     <div class="wrap">
-        <h1>Calculadora de Matchups de Tipo</h1>
+        <h1 class="pxl-heading">Calculadora de Matchups de Tipo</h1>
         <p class="subtitle">Selecione o modo e os tipos. O resultado mostra todos os tipos (puros e combinados)
             ordenados pela melhor cobertura.</p>
 
         <div class="panel">
             <h2>Ranquear por</h2>
             <div class="mode-row">
-                <div class="mode-option">
+                <label class="toggle-pill pxl-toggle" title="Você escolhe o tipo do alvo (até 2) e vê quem bate mais forte nele">
                     <input type="radio" name="mode" id="mode-ataque" value="ataque" checked>
-                    <label for="mode-ataque">Ataque<small>Você escolhe o tipo do alvo (até 2) e vê quem bate mais forte
-                            nele</small></label>
-                </div>
-                <div class="mode-option">
+                    <span>Ataque</span>
+                </label>
+                <label class="toggle-pill pxl-toggle" title="Você escolhe tipos de ataque a enfrentar e vê quem resiste mais">
                     <input type="radio" name="mode" id="mode-defesa" value="defesa">
-                    <label for="mode-defesa">Defesa<small>Você escolhe tipos de ataque a enfrentar e vê quem resiste
-                            mais</small></label>
-                </div>
+                    <span>Defesa</span>
+                </label>
             </div>
-            <label class="checkbox-row" id="include-dual-label">
+            <label class="checkbox-row" id="include-dual-label" title="Só se aplica no modo Defesa; um golpe é sempre de 1 tipo só">
                 <input type="checkbox" id="include-dual">
-                <span>Incluir combinações de dois tipos (ex: Água/Voador) <small>— só se aplica no modo Defesa; um golpe
-                        é sempre de 1 tipo só</small></span>
+                <span>Incluir combinações de dois tipos (ex: Água/Voador)</span>
             </label>
-        </div>
 
-        <div class="panel">
+            <div class="divider"></div>
+
             <h2 id="type-panel-title">Tipo do alvo (até 2)</h2>
             <div class="type-grid" id="type-grid"></div>
-        </div>
 
-        <p class="hint" id="hint">Selecione ao menos um tipo acima.</p>
+            <p class="hint" id="hint">Selecione ao menos um tipo acima.</p>
 
-        <div class="panel" id="results">
-            <h2 id="results-title">Resultado</h2>
-            <div id="results-body"></div>
+            <div id="results">
+                <div class="divider"></div>
+                <h2 id="results-title">Resultado</h2>
+                <div id="results-body"></div>
+            </div>
         </div>
 
         <div class="panel">
             <h2>Tabela completa (referência)</h2>
             <div class="mode-row" style="margin-bottom: 14px;">
-                <div class="mode-option">
+                <label class="toggle-pill pxl-toggle" title="Passe o mouse/toque num tipo pra ver a linha (o que ele ataca)">
                     <input type="radio" name="chart-mode" id="chart-mode-ataque" value="ataque" checked>
-                    <label for="chart-mode-ataque">Ataque<small>Passe o mouse/toque num tipo pra ver a linha (o que ele
-                            ataca)</small></label>
-                </div>
-                <div class="mode-option">
+                    <span>Ataque</span>
+                </label>
+                <label class="toggle-pill pxl-toggle" title="Passe o mouse/toque num tipo pra ver a coluna (o que recebe)">
                     <input type="radio" name="chart-mode" id="chart-mode-defesa" value="defesa">
-                    <label for="chart-mode-defesa">Defesa<small>Passe o mouse/toque num tipo pra ver a coluna (o que
-                            recebe)</small></label>
-                </div>
+                    <span>Defesa</span>
+                </label>
             </div>
 
             <div class="chart-filter">
@@ -769,18 +726,18 @@
                     todas)</div>
 
                 <div class="chart-filter-options">
-                    <label class="toggle-pill">
+                    <label class="toggle-pill pxl-toggle">
                         <input type="checkbox" id="filter-opt-comum" checked>
                         <span>Comum</span>
                     </label>
-                    <label class="toggle-pill">
+                    <label class="toggle-pill pxl-toggle">
                         <input type="checkbox" id="filter-opt-multiplo">
                         <span>Múltiplo</span>
                     </label>
                 </div>
 
                 <div class="autocomplete-wrap">
-                    <input type="text" id="chart-filter-input" placeholder="Digite um tipo..." autocomplete="off">
+                    <input type="text" class="pxl-input" id="chart-filter-input" placeholder="Digite um tipo..." autocomplete="off">
                     <div class="autocomplete-dropdown" id="chart-filter-dropdown"></div>
                 </div>
 

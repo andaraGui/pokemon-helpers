@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Meus Pokémon</title>
+
+    <link
+        rel="stylesheet"
+        href="pixel-theme.css"
+    >
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #14161c;
+            color: #e8e9ee;
+        }
+
+        .page-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .page-title {
+            margin: 0;
+        }
+
+        .pokemon-section {
+            margin-bottom: 32px;
+        }
+
+        .section-header,
+        .pc-box-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .section-title,
+        .pc-box-title {
+            margin: 0;
+        }
+
+        .section-counter,
+        .pc-box-counter {
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+
+        .pokemon-list {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fit,
+                minmax(260px, 1fr)
+            );
+            gap: 12px;
+        }
+
+        .pokemon-card {
+            position: relative;
+            padding: 14px;
+            border: 2px solid currentColor;
+            background: inherit;
+        }
+
+        .pokemon-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid currentColor;
+        }
+
+        .pokemon-name {
+            min-width: 0;
+            overflow: hidden;
+            font-weight: bold;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pokemon-level {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+
+        .pokemon-gender {
+            font-size: 1.2em;
+        }
+
+        .pokemon-card-body {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .pokemon-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .pokemon-info-row {
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            min-width: 0;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pokemon-label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            opacity: 0.75;
+        }
+
+        .pokemon-value {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pokemon-slot {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid currentColor;
+            font-size: 0.75rem;
+            opacity: 0.65;
+        }
+
+        .pc-boxes {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .pc-box {
+            padding: 16px;
+        }
+
+        .empty {
+            margin: 0;
+            padding: 16px;
+            border: 1px dashed currentColor;
+            text-align: center;
+            opacity: 0.75;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 12px;
+            }
+
+            .pokemon-list {
+                grid-template-columns: 1fr;
+            }
+
+            .pokemon-card-body {
+                grid-template-columns: 1fr;
+            }
+
+            .section-header,
+            .pc-box-header {
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page-container">
+        <h2><span class="pxl-pokeball" style="margin-right:6px;"></span>Meus Pokemons</h2>
+
+        <div id="content">
+            <p class="empty">
+                Aguardando os dados dos Pokémon...
+            </p>
+        </div>
+    </main>
+
+    <script src="myPokemons.js"></script>
+</body>
+</html>

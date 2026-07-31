@@ -40,43 +40,36 @@ acontece uma vez por carregamento (`window.__pkmnHelperFetchPatched`).
   já que a resposta de fim de batalha também pode trazer `foe.stats`).
 - `data.foe.stats` presente → foca na aba Encontro.
 
-## DevTools no infinitymmo.net
+## DevTools
 
-O site tem um script anti-debug (ofuscado, embutido no HTML) que:
+O infinitymmo.net bloqueia DevTools normal (F12 trava a aba), então siga
+esta ordem:
 
-- Bloqueia F12, Ctrl/Cmd+Shift+I/J/C, Ctrl+U e o menu de contexto.
-- Mede `outerWidth/outerHeight - innerWidth/innerHeight` a cada 1s; se a
-  diferença passar de ~220px (DevTools dockado ocupando espaço na mesma
-  janela), dispara o bloqueio.
-- Roda um `debugger;` a cada 5s medindo `performance.now()` antes/depois; se
-  o tempo de execução passar de 250ms três vezes seguidas (sinal de que o
-  DevTools está pausando ali), dispara o bloqueio.
-- Bloqueio = `document.documentElement.innerHTML` substituído por uma
-  mensagem de "Sessão encerrada" + `location.replace('about:blank')`.
-
-Formas de inspecionar sem disparar isso:
-
-1. **DevTools undocked** (janela separada, não dockada) evita o gatilho de
-   redimensionamento, porque a diferença outerWidth/innerWidth da janela da
-   aba não muda.
-2. **Ignore list** (blackbox) do script no painel Sources evita o gatilho do
-   `debugger;` — script na ignore list tem `debugger;` ignorado de verdade.
-   Botão direito na linha pausada (ou no arquivo) → "Add script to ignore
-   list". Dá pra configurar previamente em Settings → Ignore list → padrão
-   `infinitymmo\.net`, antes de sequer abrir o DevTools no site.
-   (A preferência `breakpointsActive: false` **não** resolve isso — ela só
-   desativa breakpoints manuais, não a instrução `debugger;`.)
-3. **CDP direto** (`--remote-debugging-port`, sem UI visual, sem habilitar o
-   domínio `Debugger`) evita os dois gatilhos ao mesmo tempo: sem janela
-   visível não há diferença de tamanho pra medir, e sem o domínio Debugger
-   habilitado o `debugger;` nunca pausa nada. É a abordagem mais robusta pra
-   automação/inspeção programática (ex: script Node com `fetch` + `WebSocket`
-   nativos, chamando `/json/new` via `PUT` e depois `Page.enable` /
-   `Runtime.enable` / `Network.enable` — sem `Debugger.enable`).
-
-Esse é o motivo de a extensão interceptar `fetch` em vez de depender de
-abrir o Network tab manualmente: além de mais prático, evita todo esse
-cat-and-mouse a cada encontro.
+1. Abra o site e ative o overlay da extensão (ícone ou `Ctrl+Shift+Y`).
+2. No painel do Chrome que abriu, clique no ícone de "⋮" → **More tools →
+   Developer tools**, e logo em seguida arraste a janela do DevTools pra
+   fora, deixando ela **undocked** (não presa na mesma janela da aba). Isso
+   evita o gatilho de bloqueio por redimensionamento.
+3. Vá em **Settings → Ignore list** e adicione o padrão `infinitymmo\.net`
+   antes de continuar. Isso faz o `debugger;` do site ser ignorado de
+   verdade (a opção `breakpointsActive: false` não resolve isso).
+4. Agora escolha o que quer inspecionar, no menu de contexto (topo do
+   painel Sources/Console) ou pelo `chrome://extensions`:
+   - **Service worker** (`background.js`): `chrome://extensions` → card da
+     extensão → link "service worker". Se o link tiver sumido, clique no
+     ícone da extensão de novo pra acordá-lo.
+   - **Content script / overlay** (`content.js`, `interceptor.js`): use o
+     DevTools já aberto na aba (passo 2); troque o contexto no topo do
+     Console entre "top" e a extensão.
+   - **Iframes** (`index.html`/`app.js`, `battle.html`/`battle.js`): botão
+     direito dentro do painel da calculadora ou do encontro → "Inspecionar".
+     Também dá pra abrir a URL do iframe direto numa aba nova:
+     `chrome-extension://<ID-DA-EXTENSAO>/index.html` (ou `battle.html`) —
+     o ID aparece no card da extensão em `chrome://extensions`.
+5. Depois de editar qualquer arquivo: `chrome://extensions` → botão de
+   reload (↻) no card da extensão → recarregue a aba do site. A versão em
+   `manifest.json` é bumpada a cada mudança pra confirmar visualmente (no
+   card) que o reload pegou os arquivos novos.
 
 ## Limitação conhecida
 

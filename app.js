@@ -17,16 +17,27 @@
             dark: '🌙', steel: '⚙️', fairy: '✨'
         };
 
+        // abreviações oficiais de 3 letras (padrão de charts/telas de status dos jogos)
+        const ABBR = {
+            normal: 'NRM', fire: 'FIR', water: 'WTR', electric: 'ELC', grass: 'GRS',
+            ice: 'ICE', fighting: 'FGT', poison: 'PSN', ground: 'GRD', flying: 'FLY',
+            psychic: 'PSY', bug: 'BUG', rock: 'RCK', ghost: 'GHO', dragon: 'DRG',
+            dark: 'DRK', steel: 'STL', fairy: 'FRY'
+        };
+
         // ---- componente de tag: 1 tipo = pill sólida; 2 tipos = pill cortada na cor ----
-        function typeTagHTML(types) {
+        // opts.abbr troca o nome completo pela abreviação de 3 letras (chips do grid de seleção)
+        function typeTagHTML(types, opts = {}) {
             if (!Array.isArray(types)) types = [types];
             const isCombo = types.length === 2;
             const bg = isCombo
                 ? `linear-gradient(90deg, var(--t-${types[0]}) 50%, var(--t-${types[1]}) 50%)`
                 : `var(--t-${types[0]})`;
             const icons = types.map(t => ICONS[t]).join('');
-            const names = types.map(t => LABELS[t]).join('/');
-            return `<span class="type-tag${isCombo ? ' combo' : ''}" style="background:${bg}">` +
+            const dict = opts.abbr ? ABBR : LABELS;
+            const names = types.map(t => dict[t]).join('/');
+            const fullNames = types.map(t => LABELS[t]).join('/');
+            return `<span class="type-tag${isCombo ? ' combo' : ''}" style="background:${bg}" title="${fullNames}">` +
                 `<span class="icon">${icons}</span>${names}` +
                 `</span>`;
         }
@@ -92,7 +103,7 @@
             chip.className = 'type-chip';
             chip.innerHTML = `
     <input type="checkbox" id="chk-${t}" value="${t}">
-    <label for="chk-${t}">${typeTagHTML(t)}</label>
+    <label for="chk-${t}">${typeTagHTML(t, { abbr: true })}</label>
   `;
             grid.appendChild(chip);
         });

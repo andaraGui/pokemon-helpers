@@ -6,6 +6,7 @@
     // padrão sem precisar recarregar a página — só o fetch em si é
     // sobrescrito uma única vez, o padrão de URL pode mudar depois.
     window.__pkmnHelperBattleUrlRe = /\/battle\//;
+    window.__pkmnHelperCharacterUrlRe = /\/character/;
 
     if (window.__pkmnHelperFetchPatched) return;
     window.__pkmnHelperFetchPatched = true;
@@ -22,6 +23,14 @@
                     .json()
                     .then((data) => {
                         window.dispatchEvent(new CustomEvent('pkmn-helper-battle-data', { detail: data }));
+                    })
+                    .catch(() => {});
+            } else if (window.__pkmnHelperCharacterUrlRe.test(url)) {
+                response
+                    .clone()
+                    .json()
+                    .then((data) => {
+                        window.dispatchEvent(new CustomEvent('pkmn-helper-character-data', { detail: data }));
                     })
                     .catch(() => {});
             }

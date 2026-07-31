@@ -1,5 +1,27 @@
 const STAT_KEYS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
 
+const TYPE_MAPPER = {
+    0: 'normal',
+    1: 'fighting',
+    2: 'flying',
+    3: 'poison',
+    4: 'ground',
+    5: 'rock',
+    6: 'insect',
+    7: 'ghost',
+    8: 'steel',
+    9: 'bug',
+    10: 'fire',
+    11: 'water',
+    12: 'grass',
+    13: 'electric',
+    14: 'psychic',
+    15: 'ice',
+    16: 'dragon',
+    17: 'dark',
+    18: 'fairy'
+}
+
 const OUTCOME_LABELS = {
     fled: 'Fugiu',
     caught: 'Capturado',
@@ -12,6 +34,17 @@ const OUTCOME_LABELS = {
 
 function row(label, value) {
     return `<div class="row"><span class="label">${label}</span><span class="value">${value}</span></div>`;
+}
+
+function hpGauge(hp, maxHp) {
+    const pct = maxHp > 0 ? Math.max(0, Math.min(100, (hp / maxHp) * 100)) : 0;
+    const level = pct <= 20 ? 'low' : pct <= 50 ? 'mid' : 'high';
+    return `
+        <div class="pxl-hp" data-level="${level}">
+            <div class="pxl-hp-label"><span>HP</span><span>${hp} / ${maxHp}</span></div>
+            <div class="pxl-hp-track"><div class="pxl-hp-fill" style="width:${pct}%"></div></div>
+        </div>
+    `;
 }
 
 function renderBattleEnd(data, outcome) {
@@ -44,18 +77,30 @@ function render(data) {
 
     const stats = foe.stats || {};
     const ivs = foe.ivs || {};
+    const ivPercent = STAT_KEYS.reduce((acc, k) => {
+        if (ivs[k] !== undefined) acc += ivs[k];
+        return acc;
+    }, 0) / (STAT_KEYS.length * 31);
     const moves = (data.next && data.next.allowed && data.next.allowed.moves) || [];
+
+    function typeNamesFromIds(types) {
+        if (!Array.isArray(types) || types.length === 0) return [];
+        return [...new Set(types.map((typeId) => TYPE_MAPPER[typeId]).filter(Boolean))];
+    }
 
     let html = '';
     html += row('Espécie', foe.name || foe.species);
     html += row('Nível', foe.level);
     html += row('Gênero', foe.gender || '-');
-    if (foe.shiny) html += row('Shiny', '<span class="shiny">★ sim</span>');
-    html += row('HP', `${foe.hp} / ${foe.maxHp}`);
+    if (foe.shiny) html += row('Shiny', '<span class="pxl-badge pxl-badge-accent">★ sim</span>');
+    html += hpGauge(foe.hp, foe.maxHp);
     html += row('Habilidade', foe.ability || '-');
     html += row('Natureza', foe.nature || '-');
+    html += row('IVs (%)', `${Math.round(ivPercent * 100)}%`);
     html += row('Item', foe.heldItem || '-');
-    html += row('Tipos (id)', (foe.types || []).join(' / ') || '-');
+
+    const typeNames = typeNamesFromIds(foe.types);
+    html += row('Tipo(s)', typeNames.length ? typeNames.join(' / ') : '-');
 
     html += '<h2>Stats</h2>';
     STAT_KEYS.forEach((k) => {

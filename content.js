@@ -27,7 +27,7 @@
 
         // ---- bolha flutuante: estado recolhido (menor espaço possível na tela) ----
         const bubble = document.createElement('button');
-        bubble.className = 'ph-bubble';
+        bubble.className = 'ph-bubble pxl-bubble';
         bubble.textContent = '🧭';
         bubble.title = 'Abrir Pokemon Helper';
 
@@ -36,19 +36,25 @@
         header.className = 'ph-header';
 
         const calcBtn = document.createElement('button');
-        calcBtn.className = 'ph-icon-btn ph-view-btn';
+        calcBtn.className = 'ph-icon-btn ph-view-btn pxl-icon-btn';
         calcBtn.textContent = '🧮';
         calcBtn.title = 'Calculadora';
         calcBtn.dataset.view = 'calc';
 
         const battleBtn = document.createElement('button');
-        battleBtn.className = 'ph-icon-btn ph-view-btn';
+        battleBtn.className = 'ph-icon-btn ph-view-btn pxl-icon-btn';
         battleBtn.textContent = '⚔️';
         battleBtn.title = 'Encontro';
         battleBtn.dataset.view = 'battle';
 
+        const myPokemonsBtn = document.createElement('button');
+        myPokemonsBtn.className = 'ph-icon-btn ph-view-btn';
+        myPokemonsBtn.textContent = '🖥️';
+        myPokemonsBtn.title = 'Meus Pokémons';
+        myPokemonsBtn.dataset.view = 'myPokemons';
+
         const settingsBtn = document.createElement('button');
-        settingsBtn.className = 'ph-icon-btn ph-view-btn';
+        settingsBtn.className = 'ph-icon-btn ph-view-btn pxl-icon-btn';
         settingsBtn.textContent = '⚙️';
         settingsBtn.title = 'Configurações';
         settingsBtn.dataset.view = 'settings';
@@ -57,12 +63,13 @@
         spacer.className = 'ph-spacer';
 
         const collapseBtn = document.createElement('button');
-        collapseBtn.className = 'ph-icon-btn';
+        collapseBtn.className = 'ph-icon-btn pxl-icon-btn';
         collapseBtn.textContent = '—';
         collapseBtn.title = 'Recolher';
 
         header.appendChild(calcBtn);
         header.appendChild(battleBtn);
+        header.appendChild(myPokemonsBtn);
         header.appendChild(settingsBtn);
         header.appendChild(spacer);
         header.appendChild(collapseBtn);
@@ -81,16 +88,103 @@
         battleFrame.className = 'ph-frame';
         battleFrame.src = chrome.runtime.getURL('battle.html');
 
-        const settingsPanel = buildSettingsPanel(settings, container);
+        const myPokemonsFrame = document.createElement('iframe');
+        myPokemonsFrame.id = 'pokemon-myPokemons-frame';
+        myPokemonsFrame.className = 'ph-frame';
+        myPokemonsFrame.src = chrome.runtime.getURL('myPokemons.html');
+
+        const settingsPanel = buildSettingsPanel();
 
         body.appendChild(calcFrame);
         body.appendChild(battleFrame);
+        body.appendChild(myPokemonsFrame);
         body.appendChild(settingsPanel);
+
+        const RESIZE_DIRS = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
+        const resizeHandles = RESIZE_DIRS.map((dir) => {
+            const handle = document.createElement('div');
+            handle.className = `ph-resize-handle ph-resize-${dir}`;
+            handle.dataset.dir = dir;
+            return handle;
+        });
 
         container.appendChild(bubble);
         container.appendChild(header);
         container.appendChild(body);
+        resizeHandles.forEach((handle) => container.appendChild(handle));
         document.documentElement.appendChild(container);
+
+        // ---- mover: arrastar pelo cabeçalho (fora dos botões) ----
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.ph-icon-btn')) return;
+            e.preventDefault();
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startTop = settings.top;
+            const startRight = settings.right;
+            const maxTop = Math.max(0, window.innerHeight - settings.height);
+            const maxRight = Math.max(0, window.innerWidth - settings.width);
+
+            const onMove = (moveEvent) => {
+                const dx = moveEvent.clientX - startX;
+                const dy = moveEvent.clientY - startY;
+                settings.top = clampNum(startTop + dy, 0, maxTop, startTop);
+                settings.right = clampNum(startRight - dx, 0, maxRight, startRight);
+                applyBox(container, settings);
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                persist(settings);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+
+        // ---- redimensionar: arrastar qualquer borda/canto ----
+        resizeHandles.forEach((handle) => {
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const dir = handle.dataset.dir;
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const startWidth = settings.width;
+                const startHeight = settings.height;
+                const startTop = settings.top;
+                const startRight = settings.right;
+
+                const onMove = (moveEvent) => {
+                    const dx = moveEvent.clientX - startX;
+                    const dy = moveEvent.clientY - startY;
+
+                    if (dir.includes('e')) {
+                        const newWidth = clampNum(startWidth + dx, MIN_WIDTH, 4000, startWidth);
+                        settings.right = startRight - (newWidth - startWidth);
+                        settings.width = newWidth;
+                    } else if (dir.includes('w')) {
+                        settings.width = clampNum(startWidth - dx, MIN_WIDTH, 4000, startWidth);
+                    }
+
+                    if (dir.includes('s')) {
+                        settings.height = clampNum(startHeight + dy, MIN_HEIGHT, 4000, startHeight);
+                    } else if (dir.includes('n')) {
+                        const newHeight = clampNum(startHeight - dy, MIN_HEIGHT, 4000, startHeight);
+                        settings.top = startTop + (startHeight - newHeight);
+                        settings.height = newHeight;
+                    }
+
+                    applyBox(container, settings);
+                };
+                const onUp = () => {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    persist(settings);
+                };
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        });
 
         setCollapsed(container, settings, settings.collapsed);
         setActiveView('calc', container);
@@ -104,17 +198,29 @@
             setActiveView(btn.dataset.view, container);
         });
 
-        if (!window.__pkmnHelperBattleListenerAdded) {
-            window.__pkmnHelperBattleListenerAdded = true;
-            window.addEventListener('pkmn-helper-battle-data', (ev) => {
+        if (!window.__pkmnHelperPayloadListenerAdded) {
+            window.__pkmnHelperPayloadListenerAdded = true;
+
+            const handleHelperPayload = (ev) => {
                 const data = ev.detail;
-                const frame = document.getElementById('pokemon-battle-frame');
-                if (frame) frame.contentWindow.postMessage({ type: 'battle-data', payload: data }, '*');
+                const battleFrame = document.getElementById('pokemon-battle-frame');
+                const myPokemonsFrame = document.getElementById('pokemon-myPokemons-frame');
+                if (battleFrame) battleFrame.contentWindow.postMessage({ type: 'battle-data', payload: data }, '*');
+                if (myPokemonsFrame) myPokemonsFrame.contentWindow.postMessage({ type: 'character-data', payload: data }, '*');
 
                 const overlay = document.getElementById(ID);
                 if (!overlay) return;
 
+                const isCharacterPayload = !!(data.party || data.pc);
                 const battleEnded = !!(data.state && data.state.over === true);
+
+                if (isCharacterPayload) {
+                    if (overlay.classList.contains('collapsed')) {
+                        setCollapsed(overlay, currentSettings(overlay), false);
+                    }
+                    setActiveView('myPokemons', overlay);
+                    return;
+                }
 
                 // battleEnded checado primeiro de propósito: a resposta de fim de
                 // batalha (ex: fugir) também pode trazer um "foe.stats" completo
@@ -123,19 +229,29 @@
                 if (battleEnded) {
                     setActiveView('calc', overlay);
                 } else if (data.foe && data.foe.stats) {
-                    // um encontro relevante justifica ocupar espaço na tela mesmo
-                    // se o usuário tinha recolhido a bolha antes
                     if (overlay.classList.contains('collapsed')) {
                         setCollapsed(overlay, currentSettings(overlay), false);
                     }
                     setActiveView('battle', overlay);
                 }
-            });
+            };
+
+            window.addEventListener('pkmn-helper-battle-data', handleHelperPayload);
+            window.addEventListener('pkmn-helper-character-data', handleHelperPayload);
         }
     }
 
     function injectStyle() {
         if (document.getElementById('pokemon-helper-style')) return;
+
+        if (!document.getElementById('pokemon-helper-pixel-theme')) {
+            const link = document.createElement('link');
+            link.id = 'pokemon-helper-pixel-theme';
+            link.rel = 'stylesheet';
+            link.href = chrome.runtime.getURL('pixel-theme.css');
+            document.head.appendChild(link);
+        }
+
         const style = document.createElement('style');
         style.id = 'pokemon-helper-style';
         style.textContent = `
@@ -146,29 +262,24 @@
                 flex-direction: column;
                 background: #14161c;
                 color: #e8e9ee;
-                font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                border-radius: 12px;
+                font-family: 'Press Start 2P', 'Courier New', ui-monospace, monospace;
+                border: 3px solid #000;
+                border-radius: 0;
                 overflow: hidden;
-                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+                box-shadow: 4px 4px 0 0 #000;
             }
             #${ID} .ph-bubble {
                 display: none;
-                width: 100%;
-                height: 100%;
-                border: 0;
-                background: #1c1f28;
-                color: #e8e9ee;
-                font-size: 22px;
-                cursor: pointer;
-                align-items: center;
-                justify-content: center;
+                font-size: 20px;
             }
             #${ID}.collapsed {
                 width: 48px !important;
                 height: 48px !important;
                 min-width: 0 !important;
                 min-height: 0 !important;
-                border-radius: 50%;
+                border-radius: 0;
+                border: 0;
+                box-shadow: none;
             }
             #${ID}.collapsed .ph-bubble { display: flex; }
             #${ID}.collapsed .ph-header,
@@ -178,24 +289,14 @@
                 align-items: center;
                 flex: 0 0 auto;
                 background: #1c1f28;
-                gap: 2px;
-                padding: 0 4px;
+                border-bottom: 2px solid #000;
+                gap: 4px;
+                padding: 4px;
+                cursor: move;
+                user-select: none;
             }
             #${ID} .ph-icon-btn {
                 flex: 0 0 auto;
-                width: 30px;
-                height: 34px;
-                border: 0;
-                border-radius: 6px;
-                background: transparent;
-                color: #9198ab;
-                font-size: 14px;
-                cursor: pointer;
-            }
-            #${ID} .ph-icon-btn:hover { color: #e8e9ee; }
-            #${ID} .ph-view-btn.active {
-                color: #ffb238;
-                background: rgba(255, 178, 56, 0.14);
             }
             #${ID} .ph-spacer { flex: 1; }
             #${ID} .ph-body { flex: 1; position: relative; min-height: 0; }
@@ -213,107 +314,83 @@
                 display: none;
                 overflow-y: auto;
                 padding: 12px;
-                font-size: 12px;
+                font-size: var(--pxl-fs-sm);
                 box-sizing: border-box;
             }
             #${ID} .ph-settings h3 {
-                font-size: 11px;
+                font-size: var(--pxl-fs-xs);
                 text-transform: uppercase;
                 letter-spacing: 0.08em;
                 color: #9198ab;
                 margin: 0 0 8px;
             }
-            #${ID} .ph-settings-row {
-                display: flex;
-                gap: 8px;
-                margin-bottom: 10px;
+            #${ID} .ph-btn-shortcut { width: 100%; margin-bottom: 4px; }
+            #${ID} .ph-hint { color: #9198ab; font-size: var(--pxl-fs-sm); margin: 4px 0 14px; }
+            #${ID} .ph-resize-handle {
+                position: absolute;
+                z-index: 10;
             }
-            #${ID} .ph-field { flex: 1; }
-            #${ID} .ph-field label {
-                display: block;
-                color: #9198ab;
-                font-size: 11px;
-                margin-bottom: 3px;
+            #${ID}.collapsed .ph-resize-handle { display: none; }
+            #${ID} .ph-resize-n, #${ID} .ph-resize-s {
+                left: 6px;
+                right: 6px;
+                height: 6px;
+                cursor: ns-resize;
             }
-            #${ID} .ph-field input {
-                width: 100%;
-                box-sizing: border-box;
-                background: #21242f;
-                border: 1px solid #2e3240;
-                color: #e8e9ee;
-                border-radius: 6px;
-                padding: 6px 8px;
-                font-size: 12px;
+            #${ID} .ph-resize-n { top: 0; }
+            #${ID} .ph-resize-s { bottom: 0; }
+            #${ID} .ph-resize-e, #${ID} .ph-resize-w {
+                top: 6px;
+                bottom: 6px;
+                width: 6px;
+                cursor: ew-resize;
             }
-            #${ID} .ph-settings-actions {
-                display: flex;
-                gap: 8px;
-                margin-top: 14px;
+            #${ID} .ph-resize-e { right: 0; }
+            #${ID} .ph-resize-w { left: 0; }
+            #${ID} .ph-resize-ne, #${ID} .ph-resize-nw, #${ID} .ph-resize-se, #${ID} .ph-resize-sw {
+                width: 12px;
+                height: 12px;
             }
-            #${ID} .ph-settings-actions button {
-                flex: 1;
-                padding: 8px;
-                border-radius: 8px;
-                border: 0;
-                cursor: pointer;
-                font-size: 12px;
-                font-weight: 700;
+            #${ID} .ph-resize-ne {
+                top: 0;
+                right: 0;
+                cursor: nesw-resize;
+                background: linear-gradient(45deg, transparent 50%, #9198ab 50%);
             }
-            #${ID} .ph-btn-save { background: #ffb238; color: #1a1408; }
-            #${ID} .ph-btn-shortcut { background: #21242f; color: #e8e9ee; border: 1px solid #2e3240 !important; width: 100%; margin-bottom: 4px; }
-            #${ID} .ph-hint { color: #9198ab; font-size: 11px; margin: 4px 0 14px; }
+            #${ID} .ph-resize-nw {
+                top: 0;
+                left: 0;
+                cursor: nwse-resize;
+                background: linear-gradient(315deg, transparent 50%, #9198ab 50%);
+            }
+            #${ID} .ph-resize-se {
+                bottom: 0;
+                right: 0;
+                cursor: nwse-resize;
+                background: linear-gradient(135deg, transparent 50%, #9198ab 50%);
+            }
+            #${ID} .ph-resize-sw {
+                bottom: 0;
+                left: 0;
+                cursor: nesw-resize;
+                background: linear-gradient(225deg, transparent 50%, #9198ab 50%);
+            }
         `;
         document.head.appendChild(style);
     }
 
-    function buildSettingsPanel(settings, container) {
+    function buildSettingsPanel() {
         const panel = document.createElement('div');
         panel.className = 'ph-settings';
         panel.id = 'pokemon-settings-panel';
         panel.innerHTML = `
-            <h3>Posição na tela (px)</h3>
-            <div class="ph-settings-row">
-                <div class="ph-field">
-                    <label for="ph-set-top">Topo</label>
-                    <input type="number" id="ph-set-top" min="0" value="${settings.top}">
-                </div>
-                <div class="ph-field">
-                    <label for="ph-set-right">Direita</label>
-                    <input type="number" id="ph-set-right" min="0" value="${settings.right}">
-                </div>
-            </div>
-            <h3>Tamanho (px)</h3>
-            <div class="ph-settings-row">
-                <div class="ph-field">
-                    <label for="ph-set-width">Largura</label>
-                    <input type="number" id="ph-set-width" min="${MIN_WIDTH}" value="${settings.width}">
-                </div>
-                <div class="ph-field">
-                    <label for="ph-set-height">Altura</label>
-                    <input type="number" id="ph-set-height" min="${MIN_HEIGHT}" value="${settings.height}">
-                </div>
-            </div>
             <h3>Atalho de teclado</h3>
-            <button type="button" class="ph-btn-shortcut" id="ph-set-shortcut">Configurar atalho de abrir/fechar</button>
+            <button type="button" class="ph-btn-shortcut pxl-btn pxl-btn-sm" id="ph-set-shortcut">Configurar atalho de abrir/fechar</button>
             <p class="ph-hint">Abre a página de atalhos do Chrome, onde dá pra definir a combinação de teclas que abre e fecha esta extensão em qualquer aba.</p>
-            <div class="ph-settings-actions">
-                <button type="button" class="ph-btn-save" id="ph-set-save">Salvar</button>
-            </div>
         `;
 
         panel.querySelector('#ph-set-shortcut').addEventListener('click', () => {
             chrome.runtime.sendMessage({ type: 'pkmn-helper-open-shortcuts' });
-        });
-
-        panel.querySelector('#ph-set-save').addEventListener('click', () => {
-            const top = clampNum(panel.querySelector('#ph-set-top').value, 0, 4000, settings.top);
-            const right = clampNum(panel.querySelector('#ph-set-right').value, 0, 4000, settings.right);
-            const width = clampNum(panel.querySelector('#ph-set-width').value, MIN_WIDTH, 4000, settings.width);
-            const height = clampNum(panel.querySelector('#ph-set-height').value, MIN_HEIGHT, 4000, settings.height);
-
-            Object.assign(settings, { top, right, width, height });
-            applyBox(container, settings);
-            persist(settings);
         });
 
         return panel;
@@ -359,11 +436,13 @@
     function setActiveView(view, container) {
         const calc = container.querySelector('#pokemon-calc-frame');
         const battle = container.querySelector('#pokemon-battle-frame');
+        const myPokemons = container.querySelector('#pokemon-myPokemons-frame');
         const settingsPanel = container.querySelector('#pokemon-settings-panel');
-        if (!calc || !battle || !settingsPanel) return;
+        if (!calc || !battle || !myPokemons || !settingsPanel) return;
 
         calc.style.display = view === 'calc' ? 'block' : 'none';
         battle.style.display = view === 'battle' ? 'block' : 'none';
+        myPokemons.style.display = view === 'myPokemons' ? 'block' : 'none';
         settingsPanel.style.display = view === 'settings' ? 'block' : 'none';
 
         container.querySelectorAll('.ph-view-btn').forEach((btn) => {

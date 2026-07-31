@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Encontro atual</title>
+    <link rel="stylesheet" href="pixel-theme.css">
     <style>
         * {
             box-sizing: border-box;
@@ -13,13 +14,13 @@
             margin: 0;
             background: #14161c;
             color: #e8e9ee;
-            font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Press Start 2P', 'Courier New', ui-monospace, monospace;
             padding: 14px;
-            font-size: 13px;
+            font-size: var(--pxl-fs-sm);
         }
 
         h2 {
-            font-size: 11px;
+            font-size: var(--pxl-fs-xs);
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: #9198ab;
@@ -33,7 +34,7 @@
 
         .empty {
             color: #9198ab;
-            font-size: 12px;
+            font-size: var(--pxl-fs-sm);
         }
 
         .row {
@@ -63,14 +64,14 @@
             padding: 3px 0;
         }
 
-        .shiny {
-            color: #ffb238;
+        .pxl-hp {
+            padding: 6px 0 10px;
         }
     </style>
 </head>
 
 <body>
-    <h2>Encontro atual</h2>
+    <h2><span class="pxl-pokeball" style="margin-right:6px;"></span>Encontro atual</h2>
     <div id="content">
         <p class="empty">Nenhum encontro capturado ainda. Entre em uma batalha selvagem.</p>
     </div>
