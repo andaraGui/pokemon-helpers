@@ -93,17 +93,98 @@
         myPokemonsFrame.className = 'ph-frame';
         myPokemonsFrame.src = chrome.runtime.getURL('myPokemons.html');
 
-        const settingsPanel = buildSettingsPanel(settings, container);
+        const settingsPanel = buildSettingsPanel();
 
         body.appendChild(calcFrame);
         body.appendChild(battleFrame);
         body.appendChild(myPokemonsFrame);
         body.appendChild(settingsPanel);
 
+        const RESIZE_DIRS = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
+        const resizeHandles = RESIZE_DIRS.map((dir) => {
+            const handle = document.createElement('div');
+            handle.className = `ph-resize-handle ph-resize-${dir}`;
+            handle.dataset.dir = dir;
+            return handle;
+        });
+
         container.appendChild(bubble);
         container.appendChild(header);
         container.appendChild(body);
+        resizeHandles.forEach((handle) => container.appendChild(handle));
         document.documentElement.appendChild(container);
+
+        // ---- mover: arrastar pelo cabeçalho (fora dos botões) ----
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.ph-icon-btn')) return;
+            e.preventDefault();
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startTop = settings.top;
+            const startRight = settings.right;
+            const maxTop = Math.max(0, window.innerHeight - settings.height);
+            const maxRight = Math.max(0, window.innerWidth - settings.width);
+
+            const onMove = (moveEvent) => {
+                const dx = moveEvent.clientX - startX;
+                const dy = moveEvent.clientY - startY;
+                settings.top = clampNum(startTop + dy, 0, maxTop, startTop);
+                settings.right = clampNum(startRight - dx, 0, maxRight, startRight);
+                applyBox(container, settings);
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                persist(settings);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+
+        // ---- redimensionar: arrastar qualquer borda/canto ----
+        resizeHandles.forEach((handle) => {
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const dir = handle.dataset.dir;
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const startWidth = settings.width;
+                const startHeight = settings.height;
+                const startTop = settings.top;
+                const startRight = settings.right;
+
+                const onMove = (moveEvent) => {
+                    const dx = moveEvent.clientX - startX;
+                    const dy = moveEvent.clientY - startY;
+
+                    if (dir.includes('e')) {
+                        const newWidth = clampNum(startWidth + dx, MIN_WIDTH, 4000, startWidth);
+                        settings.right = startRight - (newWidth - startWidth);
+                        settings.width = newWidth;
+                    } else if (dir.includes('w')) {
+                        settings.width = clampNum(startWidth - dx, MIN_WIDTH, 4000, startWidth);
+                    }
+
+                    if (dir.includes('s')) {
+                        settings.height = clampNum(startHeight + dy, MIN_HEIGHT, 4000, startHeight);
+                    } else if (dir.includes('n')) {
+                        const newHeight = clampNum(startHeight - dy, MIN_HEIGHT, 4000, startHeight);
+                        settings.top = startTop + (startHeight - newHeight);
+                        settings.height = newHeight;
+                    }
+
+                    applyBox(container, settings);
+                };
+                const onUp = () => {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    persist(settings);
+                };
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        });
 
         setCollapsed(container, settings, settings.collapsed);
         setActiveView('calc', container);
@@ -211,6 +292,8 @@
                 border-bottom: 2px solid #000;
                 gap: 4px;
                 padding: 4px;
+                cursor: move;
+                user-select: none;
             }
             #${ID} .ph-icon-btn {
                 flex: 0 0 auto;
@@ -241,97 +324,73 @@
                 color: #9198ab;
                 margin: 0 0 8px;
             }
-            #${ID} .ph-settings-row {
-                display: flex;
-                gap: 8px;
-                margin-bottom: 10px;
-            }
-            #${ID} .ph-field { flex: 1; }
-            #${ID} .ph-field label {
-                display: block;
-                color: #9198ab;
-                font-size: var(--pxl-fs-xs);
-                margin-bottom: 3px;
-            }
-            #${ID} .ph-field input {
-                width: 100%;
-                box-sizing: border-box;
-                background: #21242f;
-                border: 2px solid #000;
-                color: #e8e9ee;
-                border-radius: 0;
-                box-shadow: 2px 2px 0 0 #000;
-                padding: 6px 8px;
-                font-size: var(--pxl-fs-base);
-                font-family: 'Press Start 2P', 'Courier New', ui-monospace, monospace;
-            }
-            #${ID} .ph-field input:focus {
-                outline: none;
-                border-color: #ffb238;
-                box-shadow: 2px 2px 0 0 #7a4f00;
-            }
-            #${ID} .ph-settings-actions {
-                display: flex;
-                gap: 8px;
-                margin-top: 14px;
-            }
-            #${ID} .ph-settings-actions button {
-                flex: 1;
-            }
             #${ID} .ph-btn-shortcut { width: 100%; margin-bottom: 4px; }
             #${ID} .ph-hint { color: #9198ab; font-size: var(--pxl-fs-sm); margin: 4px 0 14px; }
+            #${ID} .ph-resize-handle {
+                position: absolute;
+                z-index: 10;
+            }
+            #${ID}.collapsed .ph-resize-handle { display: none; }
+            #${ID} .ph-resize-n, #${ID} .ph-resize-s {
+                left: 6px;
+                right: 6px;
+                height: 6px;
+                cursor: ns-resize;
+            }
+            #${ID} .ph-resize-n { top: 0; }
+            #${ID} .ph-resize-s { bottom: 0; }
+            #${ID} .ph-resize-e, #${ID} .ph-resize-w {
+                top: 6px;
+                bottom: 6px;
+                width: 6px;
+                cursor: ew-resize;
+            }
+            #${ID} .ph-resize-e { right: 0; }
+            #${ID} .ph-resize-w { left: 0; }
+            #${ID} .ph-resize-ne, #${ID} .ph-resize-nw, #${ID} .ph-resize-se, #${ID} .ph-resize-sw {
+                width: 12px;
+                height: 12px;
+            }
+            #${ID} .ph-resize-ne {
+                top: 0;
+                right: 0;
+                cursor: nesw-resize;
+                background: linear-gradient(45deg, transparent 50%, #9198ab 50%);
+            }
+            #${ID} .ph-resize-nw {
+                top: 0;
+                left: 0;
+                cursor: nwse-resize;
+                background: linear-gradient(315deg, transparent 50%, #9198ab 50%);
+            }
+            #${ID} .ph-resize-se {
+                bottom: 0;
+                right: 0;
+                cursor: nwse-resize;
+                background: linear-gradient(135deg, transparent 50%, #9198ab 50%);
+            }
+            #${ID} .ph-resize-sw {
+                bottom: 0;
+                left: 0;
+                cursor: nesw-resize;
+                background: linear-gradient(225deg, transparent 50%, #9198ab 50%);
+            }
         `;
         document.head.appendChild(style);
     }
 
-    function buildSettingsPanel(settings, container) {
+    function buildSettingsPanel() {
         const panel = document.createElement('div');
         panel.className = 'ph-settings';
         panel.id = 'pokemon-settings-panel';
         panel.innerHTML = `
-            <h3>Posição na tela (px)</h3>
-            <div class="ph-settings-row">
-                <div class="ph-field">
-                    <label for="ph-set-top">Topo</label>
-                    <input type="number" id="ph-set-top" min="0" value="${settings.top}">
-                </div>
-                <div class="ph-field">
-                    <label for="ph-set-right">Direita</label>
-                    <input type="number" id="ph-set-right" min="0" value="${settings.right}">
-                </div>
-            </div>
-            <h3>Tamanho (px)</h3>
-            <div class="ph-settings-row">
-                <div class="ph-field">
-                    <label for="ph-set-width">Largura</label>
-                    <input type="number" id="ph-set-width" min="${MIN_WIDTH}" value="${settings.width}">
-                </div>
-                <div class="ph-field">
-                    <label for="ph-set-height">Altura</label>
-                    <input type="number" id="ph-set-height" min="${MIN_HEIGHT}" value="${settings.height}">
-                </div>
-            </div>
             <h3>Atalho de teclado</h3>
             <button type="button" class="ph-btn-shortcut pxl-btn pxl-btn-sm" id="ph-set-shortcut">Configurar atalho de abrir/fechar</button>
             <p class="ph-hint">Abre a página de atalhos do Chrome, onde dá pra definir a combinação de teclas que abre e fecha esta extensão em qualquer aba.</p>
-            <div class="ph-settings-actions">
-                <button type="button" class="ph-btn-save pxl-btn pxl-btn-accent pxl-btn-sm" id="ph-set-save">Salvar</button>
-            </div>
         `;
 
         panel.querySelector('#ph-set-shortcut').addEventListener('click', () => {
             chrome.runtime.sendMessage({ type: 'pkmn-helper-open-shortcuts' });
-        });
-
-        panel.querySelector('#ph-set-save').addEventListener('click', () => {
-            const top = clampNum(panel.querySelector('#ph-set-top').value, 0, 4000, settings.top);
-            const right = clampNum(panel.querySelector('#ph-set-right').value, 0, 4000, settings.right);
-            const width = clampNum(panel.querySelector('#ph-set-width').value, MIN_WIDTH, 4000, settings.width);
-            const height = clampNum(panel.querySelector('#ph-set-height').value, MIN_HEIGHT, 4000, settings.height);
-
-            Object.assign(settings, { top, right, width, height });
-            applyBox(container, settings);
-            persist(settings);
         });
 
         return panel;

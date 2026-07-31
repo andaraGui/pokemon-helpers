@@ -20,6 +20,7 @@ chrome.commands.onCommand.addListener((command, tab) => {
 
 chrome.runtime.onMessage.addListener((msg) => {
     if (msg && msg.type === 'pkmn-helper-open-shortcuts') {
-        chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+        const isFirefox = typeof browser !== 'undefined';
+        chrome.tabs.create({ url: isFirefox ? 'about:addons' : 'chrome://extensions/shortcuts' });
     }
 });
