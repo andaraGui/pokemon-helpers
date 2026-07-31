@@ -5,7 +5,7 @@
   "description": "",
   "action": {},
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["background.js"]
   },
   "permissions": ["activeTab", "scripting", "storage"],
   "commands": {
@@ -19,5 +19,14 @@
       "resources": ["index.html", "app.js", "battle.html", "battle.js", "pixel-theme.css", "myPokemons.html", "myPokemons.js"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ifinitymmo-helper@andaragui",
+      "strict_min_version": "109.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  }
 }
