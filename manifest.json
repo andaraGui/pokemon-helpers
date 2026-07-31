@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "IfinityMMO Helper",
-  "version": "1.4.1",
+  "version": "1.4.12",
   "description": "",
   "action": {},
   "background": {
@@ -16,7 +16,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["index.html", "app.js", "battle.html", "battle.js"],
+      "resources": ["index.html", "app.js", "battle.html", "battle.js", "pixel-theme.css"],
       "matches": ["<all_urls>"]
     }
   ]
