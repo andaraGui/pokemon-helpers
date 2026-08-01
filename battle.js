@@ -83,7 +83,7 @@ function render(data) {
     if (foe.shiny) html += row('Shiny', '<span class="pxl-badge pxl-badge-accent">★ sim</span>');
     html += hpGauge(foe.hp, foe.maxHp);
     html += row('Habilidade', foe.ability || '-');
-    html += row('Natureza', foe.nature || '-');
+    html += row('Natureza', natureEffectHTML(foe.nature));
     html += ivRow('IVs (%)', ivPercent * 31, `${Math.round(ivPercent * 100)}%`);
     html += row('Item', foe.heldItem || '-');
 
