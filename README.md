@@ -36,9 +36,10 @@ atualizar sem precisar recarregar a página; só o patch do `fetch` em si
 acontece uma vez por carregamento (`window.__pkmnHelperFetchPatched`).
 
 `content.js` decide pelo formato do payload, não pela URL exata:
-- `data.state.over === true` → volta pra aba Calculadora (checado primeiro,
-  já que a resposta de fim de batalha também pode trazer `foe.stats`).
-- `data.foe.stats` presente → foca na aba Encontro.
+- `data.foe` presente → foca na aba Encontro. Não existe mais um estado de
+  "fim de batalha" separado: `battle.js` guarda o último `foe` recebido e só
+  mescla campos novos por cima dele, porque respostas de turno (ex: atacar)
+  nem sempre reenviam o objeto `foe` completo.
 
 ## DevTools
 

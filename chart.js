@@ -27,18 +27,22 @@ function buildChart() {
 
 const chartTable = document.getElementById('type-chart');
 let pinnedType = null;
+let pinnedAttr = null;
 
 function chartMode() {
     return document.querySelector('input[name="chart-mode"]:checked').value;
 }
 
-function applyChartHighlight(type) {
+function headerAttr(th) {
+    return th.classList.contains('row-head') ? 'row' : 'col';
+}
+
+function applyChartHighlight(type, attr) {
     const cells = chartTable.querySelectorAll('td, th.row-head, th.col-head');
     if (!type) {
         cells.forEach(el => el.classList.remove('dim', 'hl'));
         return;
     }
-    const attr = chartMode() === 'ataque' ? 'row' : 'col';
     cells.forEach(el => {
         const matches = el.dataset[attr] === type;
         el.classList.toggle('hl', matches);
@@ -50,7 +54,7 @@ chartTable.addEventListener('mouseover', (e) => {
     if (pinnedType) return; // não sobrepõe um destaque fixado por clique
     const th = e.target.closest('th.row-head, th.col-head');
     if (!th) return;
-    applyChartHighlight(th.dataset.row || th.dataset.col);
+    applyChartHighlight(th.dataset.row || th.dataset.col, headerAttr(th));
 });
 chartTable.addEventListener('mouseout', (e) => {
     if (pinnedType) return;
@@ -61,8 +65,16 @@ chartTable.addEventListener('click', (e) => {
     const th = e.target.closest('th.row-head, th.col-head');
     if (!th) return;
     const type = th.dataset.row || th.dataset.col;
-    pinnedType = (pinnedType === type) ? null : type;
-    applyChartHighlight(pinnedType);
+    const attr = headerAttr(th);
+    if (pinnedType === type && pinnedAttr === attr) {
+        pinnedType = null;
+        pinnedAttr = null;
+        applyChartHighlight(null);
+    } else {
+        pinnedType = type;
+        pinnedAttr = attr;
+        applyChartHighlight(pinnedType, pinnedAttr);
+    }
 });
 
 document.getElementById('chart-mode-ataque').addEventListener('change', onChartModeChange);
@@ -269,7 +281,7 @@ function rebuildChartWithFilter() {
     }
 
     applyChartFilter(pureTags, mode);
-    applyChartHighlight(pinnedType);
+    applyChartHighlight(pinnedType, pinnedAttr);
 }
 
 rebuildChartWithFilter();

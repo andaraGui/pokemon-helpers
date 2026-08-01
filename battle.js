@@ -22,16 +22,6 @@ const TYPE_MAPPER = {
     18: 'fairy'
 }
 
-const OUTCOME_LABELS = {
-    fled: 'Fugiu',
-    caught: 'Capturado',
-    captured: 'Capturado',
-    won: 'Vitória',
-    win: 'Vitória',
-    lost: 'Derrota',
-    lose: 'Derrota',
-};
-
 function row(label, value) {
     return `<div class="row"><span class="label">${label}</span><span class="value">${value}</span></div>`;
 }
@@ -47,28 +37,18 @@ function hpGauge(hp, maxHp) {
     `;
 }
 
-function renderBattleEnd(data, outcome) {
-    const content = document.getElementById('content');
-    const rewards = data.rewards || {};
-
-    let html = row('Resultado', OUTCOME_LABELS[outcome] || outcome || '-');
-    if (rewards.money) html += row('Dinheiro', rewards.money);
-    if (rewards.prize) html += row('Prêmio', rewards.prize);
-    if (rewards.badge) html += row('Emblema', rewards.badge);
-
-    content.innerHTML = html;
-}
+let lastFoe = null;
 
 function render(data) {
     const content = document.getElementById('content');
 
-    const isOver = !!(data.state && data.state.over === true);
-    if (isOver) {
-        renderBattleEnd(data, data.state.outcome);
-        return;
+    // respostas de turno (ex: atacar) nem sempre reenviam o objeto "foe"
+    // completo; quando vier parcial ou ausente, mantém/mescla com o último
+    // oponente conhecido em vez de esvaziar o painel.
+    if (data && data.foe) {
+        lastFoe = Object.assign({}, lastFoe, data.foe);
     }
-
-    const foe = data && data.foe;
+    const foe = lastFoe;
 
     if (!foe) {
         content.innerHTML = '<p class="empty">Encontro sem dados de oponente.</p>';

@@ -171,6 +171,7 @@
         header.addEventListener('click', (e) => {
             const btn = e.target.closest('.ph-view-btn');
             if (!btn) return;
+            delete container.dataset.preBattleView; // navegação manual cancela o retorno automático
             setActiveView(btn.dataset.view, container);
         });
 
@@ -188,23 +189,28 @@
                 if (!overlay) return;
 
                 const isCharacterPayload = !!(data.party || data.pc);
-                const battleEnded = !!(data.state && data.state.over === true);
 
                 if (isCharacterPayload) {
                     if (overlay.classList.contains('collapsed')) {
                         setCollapsed(overlay, currentSettings(overlay), false);
                     }
-                    setActiveView('myPokemons', overlay);
+                    // sync de personagem costuma chegar logo após o fim da luta;
+                    // se estávamos na aba Encontro por causa dela, volta pra aba
+                    // que estava aberta antes, em vez de sempre ir pra Meus Pokémons.
+                    const returnView = overlay.dataset.preBattleView;
+                    if (returnView) {
+                        delete overlay.dataset.preBattleView;
+                        setActiveView(returnView, overlay);
+                    } else {
+                        setActiveView('myPokemons', overlay);
+                    }
                     return;
                 }
 
-                // battleEnded checado primeiro de propósito: a resposta de fim de
-                // batalha (ex: fugir) também pode trazer um "foe.stats" completo
-                // junto (não é exclusivo do início de encontro), então o fim tem
-                // que ganhar prioridade sobre o foco quando os dois aparecem juntos.
-                if (battleEnded) {
-                    setActiveView('calc', overlay);
-                } else if (data.foe && data.foe.stats) {
+                if (data.foe) {
+                    if (overlay.dataset.activeView !== 'battle' && !overlay.dataset.preBattleView) {
+                        overlay.dataset.preBattleView = overlay.dataset.activeView || 'calc';
+                    }
                     if (overlay.classList.contains('collapsed')) {
                         setCollapsed(overlay, currentSettings(overlay), false);
                     }
@@ -426,5 +432,7 @@
         container.querySelectorAll('.ph-view-btn').forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.view === view);
         });
+
+        container.dataset.activeView = view;
     }
 })();
