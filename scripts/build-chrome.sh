@@ -13,6 +13,8 @@ FILES=(
   background.js
   battle.html
   battle.js
+  chart.html
+  chart.js
   content.js
   index.html
   interceptor.js
@@ -25,6 +27,9 @@ FILES=(
 for f in "${FILES[@]}"; do
   cp "$ROOT/$f" "$DIST/$f"
 done
+
+cp -r "$ROOT/icons" "$DIST/icons"
+cp -r "$ROOT/components" "$DIST/components"
 
 rm -f "$ZIP"
 (cd "$DIST" && zip -rq "$ZIP" .)

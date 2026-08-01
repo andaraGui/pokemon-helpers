@@ -3,47 +3,7 @@ let LOCAL_PAYLOAD = {
     pc: []
 };
 const STAT_KEYS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
-const TYPE_MAPPER = {
-    0: 'normal',
-    1: 'fighting',
-    2: 'flying',
-    3: 'poison',
-    4: 'ground',
-    5: 'rock',
-    6: 'bug',
-    7: 'ghost',
-    8: 'steel',
-    10: 'fire',
-    11: 'water',
-    12: 'grass',
-    13: 'electric',
-    14: 'psychic',
-    15: 'ice',
-    16: 'dragon',
-    17: 'dark',
-    18: 'fairy'
-};
-
-const TYPE_ICONS = {
-    normal: '⭐',
-    fire: '🔥',
-    water: '💧',
-    electric: '⚡',
-    grass: '🌿',
-    ice: '❄️',
-    fighting: '👊',
-    poison: '☠️',
-    ground: '🌍',
-    flying: '🌪️',
-    psychic: '🔮',
-    bug: '🐛',
-    rock: '🪨',
-    ghost: '👻',
-    dragon: '🐉',
-    dark: '🌙',
-    steel: '⚙️',
-    fairy: '✨'
-};
+// TYPE_MAPPER e typeIconHTML vêm de components/type-tag.js
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -133,11 +93,12 @@ function formatType(types) {
         return '—';
     }
 
+    const opts = { colored: true, title: true };
     if (types[0] !== types[1]) {
-        return `${TYPE_ICONS[TYPE_MAPPER[types[0]]]} / ${TYPE_ICONS[TYPE_MAPPER[types[1]]]}`;
+        return `${typeIconHTML(TYPE_MAPPER[types[0]], opts)} ${typeIconHTML(TYPE_MAPPER[types[1]], opts)}`;
     }
 
-    return TYPE_ICONS[TYPE_MAPPER[types[0]]];
+    return typeIconHTML(TYPE_MAPPER[types[0]], opts);
 }
 
 function renderPokemonCard(pokemon, options = {}) {

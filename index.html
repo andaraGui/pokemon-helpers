@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Matchups de Tipo</title>
     <link rel="stylesheet" href="pixel-theme.css">
+    <link rel="stylesheet" href="components/type-tag.css">
     <style>
         :root {
             --bg: #14161c;
@@ -144,31 +145,6 @@
             cursor: not-allowed;
         }
 
-        /* ---- Tag de tipo único: {{icon}} {{name}} + cor de fundo ---- */
-        .type-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 10px 4px 8px;
-            border-radius: 100px;
-            font-size: var(--pxl-fs-sm);
-            font-weight: 700;
-            color: #1a1a1a;
-            line-height: 1.5;
-            white-space: nowrap;
-            user-select: none;
-        }
-
-        .type-tag .icon {
-            font-size: 0.95em;
-            line-height: 1;
-        }
-
-        /* ---- Tag de combo (dual-type): mesma pill, cor cortada ao meio ---- */
-        .type-tag.combo {
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-        }
-
         .type-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
@@ -201,9 +177,6 @@
         .type-chip .type-tag {
             justify-content: center;
             width: 100%;
-            padding: 6px 4px;
-            border-radius: 8px;
-            font-size: var(--pxl-fs-xs);
             cursor: pointer;
             filter: brightness(0.55) saturate(0.6);
             transition: filter .15s, transform .1s, opacity .15s;
@@ -425,230 +398,6 @@
             color: var(--text-dim);
         }
 
-        /* ---- tabela completa interativa ---- */
-        .chart-scroll {
-            overflow-x: auto;
-            border-radius: 8px;
-        }
-
-        table.type-chart {
-            border-collapse: collapse;
-            margin: 0 auto;
-        }
-
-        table.type-chart th,
-        table.type-chart td {
-            text-align: center;
-            padding: 5px 6px;
-            font-size: var(--pxl-fs-xs);
-            font-weight: 700;
-            font-variant-numeric: tabular-nums;
-            border: 1px solid var(--bg);
-            transition: opacity .1s;
-        }
-
-        table.type-chart th.corner {
-            position: sticky;
-            top: 0;
-            left: 0;
-            background: var(--panel);
-            z-index: 3;
-        }
-
-        table.type-chart th.col-head {
-            position: sticky;
-            top: 0;
-            background: var(--panel);
-            z-index: 2;
-            cursor: pointer;
-        }
-
-        table.type-chart th.row-head {
-            position: sticky;
-            left: 0;
-            background: var(--panel);
-            z-index: 1;
-            cursor: pointer;
-        }
-
-        table.type-chart .type-tag.mini {
-            padding: 3px 5px;
-            font-size: var(--pxl-fs-md);
-            border-radius: 6px;
-        }
-
-        table.type-chart .type-tag.mini .icon {
-            font-size: 1em;
-        }
-
-        .chart-cell.mult-4 {
-            background: rgba(87, 199, 133, 0.35);
-            color: #eafff2;
-        }
-
-        .chart-cell.mult-2 {
-            background: rgba(87, 199, 133, 0.16);
-            color: var(--good);
-        }
-
-        .chart-cell.mult-1 {
-            background: transparent;
-            color: var(--text-dim);
-            font-weight: 400;
-        }
-
-        .chart-cell.mult-0-5 {
-            background: rgba(226, 99, 122, 0.16);
-            color: var(--bad);
-        }
-
-        .chart-cell.mult-0-25 {
-            background: rgba(226, 99, 122, 0.32);
-            color: #ffdfe4;
-        }
-
-        .chart-cell.mult-0 {
-            background: #000;
-            color: #fff;
-        }
-
-        table.type-chart td.dim,
-        table.type-chart th.dim {
-            opacity: 0.22;
-        }
-
-        table.type-chart td.hl {
-            outline: 2px solid var(--accent);
-            outline-offset: -2px;
-        }
-
-        table.type-chart th.hl .type-tag {
-            box-shadow: 0 0 0 2px var(--accent);
-        }
-
-        table.type-chart tr.row-hidden {
-            display: none;
-        }
-
-        table.type-chart th.col-hidden,
-        table.type-chart td.col-hidden {
-            display: none;
-        }
-
-        /* ---- filtro de tags da tabela completa ---- */
-        .chart-filter {
-            margin-bottom: 14px;
-        }
-
-        .chart-filter-label {
-            font-size: var(--pxl-fs-xs);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-dim);
-            margin-bottom: 6px;
-            font-weight: 700;
-        }
-
-        .chart-filter input[type="text"] {
-            width: 100%;
-            margin-bottom: 8px;
-            box-sizing: border-box;
-        }
-
-        .tag-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            min-height: 1px;
-        }
-
-        .filter-chip {
-            display: inline-flex;
-            align-items: stretch;
-        }
-
-        .filter-chip .type-tag {
-            border-radius: 100px 0 0 100px;
-            padding-right: 8px;
-        }
-
-        .remove-chip {
-            background: var(--panel-2);
-            border: 1px solid var(--line);
-            border-left: none;
-            color: var(--text-dim);
-            cursor: pointer;
-            padding: 0 10px;
-            border-radius: 0 100px 100px 0;
-            font-size: var(--pxl-fs-base);
-            line-height: 1;
-        }
-
-        .remove-chip:hover {
-            color: var(--bad);
-        }
-
-        .chart-filter-options {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .chart-filter-options .toggle-pill {
-            flex: 1;
-            justify-content: center;
-        }
-
-
-        .autocomplete-wrap {
-            position: relative;
-            margin-bottom: 8px;
-        }
-
-        .autocomplete-dropdown {
-            display: none;
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0;
-            right: 0;
-            background: var(--panel-2);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            max-height: 240px;
-            overflow-y: auto;
-            z-index: 10;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-        }
-
-        .autocomplete-dropdown.open {
-            display: block;
-        }
-
-        .autocomplete-option {
-            padding: 8px 10px;
-            cursor: pointer;
-            display: flex;
-        }
-
-        .autocomplete-option:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .autocomplete-empty {
-            padding: 10px;
-            font-size: var(--pxl-fs-sm);
-            color: var(--text-dim);
-        }
-
-        tr.extra-row,
-        th.col-head.extra {
-            box-shadow: inset 3px 0 0 var(--accent);
-        }
-
-        tr.extra-row th.row-head {
-            box-shadow: inset 3px 0 0 var(--accent);
-        }
-
         @media (max-width: 720px) {
 
             .result-row.mode-ataque,
@@ -708,50 +457,10 @@
             </div>
         </div>
 
-        <div class="panel">
-            <h2>Tabela completa (referência)</h2>
-            <div class="mode-row" style="margin-bottom: 14px;">
-                <label class="toggle-pill pxl-toggle" title="Passe o mouse/toque num tipo pra ver a linha (o que ele ataca)">
-                    <input type="radio" name="chart-mode" id="chart-mode-ataque" value="ataque" checked>
-                    <span>Ataque</span>
-                </label>
-                <label class="toggle-pill pxl-toggle" title="Passe o mouse/toque num tipo pra ver a coluna (o que recebe)">
-                    <input type="radio" name="chart-mode" id="chart-mode-defesa" value="defesa">
-                    <span>Defesa</span>
-                </label>
-            </div>
-
-            <div class="chart-filter">
-                <div class="chart-filter-label" id="chart-filter-label">Mostrar só estas linhas (deixe vazio pra ver
-                    todas)</div>
-
-                <div class="chart-filter-options">
-                    <label class="toggle-pill pxl-toggle">
-                        <input type="checkbox" id="filter-opt-comum" checked>
-                        <span>Comum</span>
-                    </label>
-                    <label class="toggle-pill pxl-toggle">
-                        <input type="checkbox" id="filter-opt-multiplo">
-                        <span>Múltiplo</span>
-                    </label>
-                </div>
-
-                <div class="autocomplete-wrap">
-                    <input type="text" class="pxl-input" id="chart-filter-input" placeholder="Digite um tipo..." autocomplete="off">
-                    <div class="autocomplete-dropdown" id="chart-filter-dropdown"></div>
-                </div>
-
-                <div class="tag-chips" id="chart-filter-chips"></div>
-            </div>
-
-            <div class="chart-scroll">
-                <table class="type-chart" id="type-chart"></table>
-            </div>
-            <p class="hint">Linhas = quem ataca. Colunas = quem defende. Toque/clique num tipo pra fixar o destaque;
-                toque de novo pra soltar.</p>
-        </div>
     </div>
 
+    <script src="components/type-tag.js"></script>
+    <script src="components/type-chart-data.js"></script>
     <script src="app.js"></script>
 
 </body>
