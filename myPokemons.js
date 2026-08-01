@@ -2,6 +2,9 @@ let LOCAL_PAYLOAD = {
     party: [],
     pc: []
 };
+
+const ICON_URL = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/';
+
 const STAT_KEYS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
 // TYPE_MAPPER e typeIconHTML vêm de components/type-tag.js
 
@@ -101,6 +104,10 @@ function formatType(types) {
     return typeIconHTML(TYPE_MAPPER[types[0]], opts);
 }
 
+function getPokemonId(name) {
+    return POKEMON_NAME_TO_ID[name.toLowerCase()] || null;
+}
+
 function renderPokemonCard(pokemon, options = {}) {
     if (!pokemon) {
         return '';
@@ -120,11 +127,17 @@ function renderPokemonCard(pokemon, options = {}) {
     const heldItem = formatToText(pokemon.heldItem) || '—';
     const type = formatType(pokemon.types);
     const shiny = pokemon.shiny ? '✨' : '';
+    const pokemonId = getPokemonId(name);
+    const imgUrl = `${ICON_URL}${pokemonId}.svg`
+    const icon = pokemonId 
+        ? `<img class="pokemon-icon" src="${imgUrl}" alt="${escapeHtml(name)} icon" />` 
+        : '<span class="pxl-pokeball" style="margin:5px; margin-right:16px; height: 30px; width: 30px;"></span>';
 
     return `
         <div class="pokemon-card pokemon-card--${location}">
             <div class="pokemon-card-header">
                 <div class="pokemon-name">
+                    ${icon}
                     ${escapeHtml(name)}
                     ${type}
                 </div>
@@ -326,10 +339,13 @@ window.addEventListener('message', event => {
         return;
     }
 
-    LOCAL_PAYLOAD = {
-        party: payload.party,
-        pc: payload.pc
-    };
+    if(payload.pc?.length > 0) {
+        LOCAL_PAYLOAD.pc = payload.pc;
+    }
+
+    if(payload.party?.length > 0) {
+        LOCAL_PAYLOAD.party = payload.party;
+    }
 
     render(LOCAL_PAYLOAD);
 });

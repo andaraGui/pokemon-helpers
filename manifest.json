@@ -17,7 +17,22 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["index.html", "app.js", "battle.html", "battle.js", "chart.html", "chart.js", "pixel-theme.css", "myPokemons.html", "myPokemons.js", "components/*.js", "components/*.css", "icons/types/*.png", "icons/types/colored/*.png"],
+      "resources": [
+        "index.html",
+        "app.js",
+        "battle.html",
+        "battle.js",
+        "chart.html",
+        "chart.js",
+        "pixel-theme.css",
+        "myPokemons.html",
+        "myPokemons.js",
+        "components/*.js",
+        "components/*.css",
+        "data/*.js",
+        "icons/types/*.png",
+        "icons/types/colored/*.png"
+      ],
       "matches": ["<all_urls>"]
     }
   ]
