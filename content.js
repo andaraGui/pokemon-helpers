@@ -9,7 +9,7 @@
     }
 
     const STORAGE_KEY = 'pkmnHelperSettings';
-    const DEFAULT_SETTINGS = { top: 16, right: 16, width: 300, height: 360, collapsed: true };
+    const DEFAULT_SETTINGS = { top: 16, right: 16, width: 300, height: 360, collapsed: true, view: 'calc' };
     const MIN_WIDTH = 220;
     const MIN_HEIGHT = 180;
 
@@ -163,7 +163,7 @@
         });
 
         setCollapsed(container, settings, settings.collapsed);
-        setActiveView('calc', container);
+        setActiveView(settings.view || 'calc', container);
 
         bubble.addEventListener('click', () => setCollapsed(container, settings, false));
         collapseBtn.addEventListener('click', () => setCollapsed(container, settings, true));
@@ -406,6 +406,7 @@
             width: parseInt(container.style.width, 10) || DEFAULT_SETTINGS.width,
             height: parseInt(container.style.height, 10) || DEFAULT_SETTINGS.height,
             collapsed: container.classList.contains('collapsed'),
+            view: container.dataset.activeView || DEFAULT_SETTINGS.view,
         };
     }
 
@@ -434,5 +435,6 @@
         });
 
         container.dataset.activeView = view;
+        persist(currentSettings(container));
     }
 })();
