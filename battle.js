@@ -26,6 +26,14 @@ function row(label, value) {
     return `<div class="row"><span class="label">${label}</span><span class="value">${value}</span></div>`;
 }
 
+function ivLevel(iv) {
+    return iv <= 15 ? 'low' : iv <= 25 ? 'mid' : 'high';
+}
+
+function ivRow(label, iv, display) {
+    return `<div class="row"><span class="label">${label}</span><span class="value" data-level="${ivLevel(iv)}">${display}</span></div>`;
+}
+
 function hpGauge(hp, maxHp) {
     const pct = maxHp > 0 ? Math.max(0, Math.min(100, (hp / maxHp) * 100)) : 0;
     const level = pct <= 20 ? 'low' : pct <= 50 ? 'mid' : 'high';
@@ -76,7 +84,7 @@ function render(data) {
     html += hpGauge(foe.hp, foe.maxHp);
     html += row('Habilidade', foe.ability || '-');
     html += row('Natureza', foe.nature || '-');
-    html += row('IVs (%)', `${Math.round(ivPercent * 100)}%`);
+    html += ivRow('IVs (%)', ivPercent * 31, `${Math.round(ivPercent * 100)}%`);
     html += row('Item', foe.heldItem || '-');
 
     const typeNames = typeNamesFromIds(foe.types);
@@ -89,7 +97,7 @@ function render(data) {
 
     html += '<h2>IVs</h2>';
     STAT_KEYS.forEach((k) => {
-        if (ivs[k] !== undefined) html += row(k.toUpperCase(), `${ivs[k]}/31`);
+        if (ivs[k] !== undefined) html += ivRow(k.toUpperCase(), ivs[k], `${ivs[k]}/31`);
     });
 
     if (moves.length) {

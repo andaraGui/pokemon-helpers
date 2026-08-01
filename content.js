@@ -125,12 +125,19 @@
             const maxTop = Math.max(0, window.innerHeight - settings.height);
             const maxRight = Math.max(0, window.innerWidth - settings.width);
 
+            let rafScheduled = false;
             const onMove = (moveEvent) => {
                 const dx = moveEvent.clientX - startX;
                 const dy = moveEvent.clientY - startY;
                 settings.top = clampNum(startTop + dy, 0, maxTop, startTop);
                 settings.right = clampNum(startRight - dx, 0, maxRight, startRight);
-                applyBox(container, settings);
+                if (!rafScheduled) {
+                    rafScheduled = true;
+                    requestAnimationFrame(() => {
+                        rafScheduled = false;
+                        applyBox(container, settings);
+                    });
+                }
             };
             const onUp = () => {
                 document.removeEventListener('mousemove', onMove);
@@ -154,6 +161,7 @@
                 const startTop = settings.top;
                 const startRight = settings.right;
 
+                let rafScheduled = false;
                 const onMove = (moveEvent) => {
                     const dx = moveEvent.clientX - startX;
                     const dy = moveEvent.clientY - startY;
@@ -174,7 +182,13 @@
                         settings.height = newHeight;
                     }
 
-                    applyBox(container, settings);
+                    if (!rafScheduled) {
+                        rafScheduled = true;
+                        requestAnimationFrame(() => {
+                            rafScheduled = false;
+                            applyBox(container, settings);
+                        });
+                    }
                 };
                 const onUp = () => {
                     document.removeEventListener('mousemove', onMove);
@@ -218,11 +232,14 @@
                 // pra presença de `foe`), esse "over" não deve virar estado de tela lá.
                 const battleEnded = !!(data.state && data.state.over === true);
 
-                if (isCharacterPayload) {
-                    // esse payload chega passivamente sempre que o jogo sincroniza o
-                    // personagem (não só quando o jogador abre a tela de time), então
-                    // não deve abrir o overlay nem trocar de aba sozinho.
-                    if (!battleEnded) return;
+                if (isCharacterPayload && !battleEnded) {
+                    if (overlay.dataset.activeView !== 'myPokemons') {
+                        if (overlay.classList.contains('collapsed')) {
+                            setCollapsed(overlay, currentSettings(overlay), false);
+                        }
+                        setActiveView('myPokemons', overlay);
+                    }
+                    return;
                 }
 
                 if (battleEnded) {
