@@ -31,48 +31,18 @@
         bubble.textContent = '🧭';
         bubble.title = 'Abrir Pokemon Helper';
 
-        // ---- cabeçalho: ícones em linha (calc / encontro / config) + recolher ----
+        // ---- cabeçalho: ícones em linha (calc / encontro / meus pokémons / tabela / config) + recolher ----
+        // buildHeaderButtons vem de components/header-buttons.js
         const header = document.createElement('div');
         header.className = 'ph-header';
 
-        const calcBtn = document.createElement('button');
-        calcBtn.className = 'ph-icon-btn ph-view-btn pxl-icon-btn';
-        calcBtn.textContent = '🧮';
-        calcBtn.title = 'Calculadora';
-        calcBtn.dataset.view = 'calc';
-
-        const battleBtn = document.createElement('button');
-        battleBtn.className = 'ph-icon-btn ph-view-btn pxl-icon-btn';
-        battleBtn.textContent = '⚔️';
-        battleBtn.title = 'Encontro';
-        battleBtn.dataset.view = 'battle';
-
-        const myPokemonsBtn = document.createElement('button');
-        myPokemonsBtn.className = 'ph-icon-btn ph-view-btn';
-        myPokemonsBtn.textContent = '🖥️';
-        myPokemonsBtn.title = 'Meus Pokémons';
-        myPokemonsBtn.dataset.view = 'myPokemons';
-
-        const settingsBtn = document.createElement('button');
-        settingsBtn.className = 'ph-icon-btn ph-view-btn pxl-icon-btn';
-        settingsBtn.textContent = '⚙️';
-        settingsBtn.title = 'Configurações';
-        settingsBtn.dataset.view = 'settings';
-
-        const spacer = document.createElement('div');
-        spacer.className = 'ph-spacer';
-
-        const collapseBtn = document.createElement('button');
-        collapseBtn.className = 'ph-icon-btn pxl-icon-btn';
-        collapseBtn.textContent = '—';
-        collapseBtn.title = 'Recolher';
-
-        header.appendChild(calcBtn);
-        header.appendChild(battleBtn);
-        header.appendChild(myPokemonsBtn);
-        header.appendChild(settingsBtn);
-        header.appendChild(spacer);
-        header.appendChild(collapseBtn);
+        const collapseBtn = buildHeaderButtons(header, [
+            { icon: '🧮', title: 'Calculadora', view: 'calc' },
+            { icon: '⚔️', title: 'Encontro', view: 'battle' },
+            { icon: '🖥️', title: 'Meus Pokémons', view: 'myPokemons' },
+            { icon: '📊', title: 'Tabela de tipos', view: 'chart' },
+            { icon: '⚙️', title: 'Configurações', view: 'settings' },
+        ], { icon: '—', title: 'Recolher' });
 
         // ---- corpo ----
         const body = document.createElement('div');
@@ -93,11 +63,17 @@
         myPokemonsFrame.className = 'ph-frame';
         myPokemonsFrame.src = chrome.runtime.getURL('myPokemons.html');
 
+        const chartFrame = document.createElement('iframe');
+        chartFrame.id = 'pokemon-chart-frame';
+        chartFrame.className = 'ph-frame';
+        chartFrame.src = chrome.runtime.getURL('chart.html');
+
         const settingsPanel = buildSettingsPanel();
 
         body.appendChild(calcFrame);
         body.appendChild(battleFrame);
         body.appendChild(myPokemonsFrame);
+        body.appendChild(chartFrame);
         body.appendChild(settingsPanel);
 
         const RESIZE_DIRS = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
@@ -437,12 +413,14 @@
         const calc = container.querySelector('#pokemon-calc-frame');
         const battle = container.querySelector('#pokemon-battle-frame');
         const myPokemons = container.querySelector('#pokemon-myPokemons-frame');
+        const chart = container.querySelector('#pokemon-chart-frame');
         const settingsPanel = container.querySelector('#pokemon-settings-panel');
-        if (!calc || !battle || !myPokemons || !settingsPanel) return;
+        if (!calc || !battle || !myPokemons || !chart || !settingsPanel) return;
 
         calc.style.display = view === 'calc' ? 'block' : 'none';
         battle.style.display = view === 'battle' ? 'block' : 'none';
         myPokemons.style.display = view === 'myPokemons' ? 'block' : 'none';
+        chart.style.display = view === 'chart' ? 'block' : 'none';
         settingsPanel.style.display = view === 'settings' ? 'block' : 'none';
 
         container.querySelectorAll('.ph-view-btn').forEach((btn) => {

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "IfinityMMO Helper",
-  "version": "1.4.28",
+  "version": "1.4.29",
   "description": "",
   "action": {},
   "background": {
@@ -16,7 +16,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["index.html", "app.js", "battle.html", "battle.js", "pixel-theme.css", "myPokemons.html", "myPokemons.js", "components/*.js", "components/*.css", "icons/types/*.png", "icons/types/colored/*.png"],
+      "resources": ["index.html", "app.js", "battle.html", "battle.js", "chart.html", "chart.js", "pixel-theme.css", "myPokemons.html", "myPokemons.js", "components/*.js", "components/*.css", "icons/types/*.png", "icons/types/colored/*.png"],
       "matches": ["<all_urls>"]
     }
   ],

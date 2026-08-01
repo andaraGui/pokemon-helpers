@@ -13,6 +13,8 @@ FILES=(
   background.js
   battle.html
   battle.js
+  chart.html
+  chart.js
   content.js
   index.html
   interceptor.js

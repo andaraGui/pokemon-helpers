@@ -2,7 +2,7 @@ function injectOverlay(tabId) {
     if (!tabId) return;
     chrome.scripting.executeScript({
         target: { tabId },
-        files: ['content.js']
+        files: ['components/header-buttons.js', 'content.js']
     });
     // MAIN world: só ali dá pra sobrescrever o window.fetch que o jogo usa.
     chrome.scripting.executeScript({
