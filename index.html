@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Matchups de Tipo</title>
     <link rel="stylesheet" href="pixel-theme.css">
+    <link rel="stylesheet" href="components/type-tag.css">
     <style>
         :root {
             --bg: #14161c;
@@ -144,31 +145,6 @@
             cursor: not-allowed;
         }
 
-        /* ---- Tag de tipo único: {{icon}} {{name}} + cor de fundo ---- */
-        .type-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 10px 4px 8px;
-            border-radius: 100px;
-            font-size: var(--pxl-fs-sm);
-            font-weight: 700;
-            color: #1a1a1a;
-            line-height: 1.5;
-            white-space: nowrap;
-            user-select: none;
-        }
-
-        .type-tag .icon {
-            font-size: 0.95em;
-            line-height: 1;
-        }
-
-        /* ---- Tag de combo (dual-type): mesma pill, cor cortada ao meio ---- */
-        .type-tag.combo {
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-        }
-
         .type-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
@@ -201,9 +177,6 @@
         .type-chip .type-tag {
             justify-content: center;
             width: 100%;
-            padding: 6px 4px;
-            border-radius: 8px;
-            font-size: var(--pxl-fs-xs);
             cursor: pointer;
             filter: brightness(0.55) saturate(0.6);
             transition: filter .15s, transform .1s, opacity .15s;
@@ -469,16 +442,6 @@
             background: var(--panel);
             z-index: 1;
             cursor: pointer;
-        }
-
-        table.type-chart .type-tag.mini {
-            padding: 3px 5px;
-            font-size: var(--pxl-fs-md);
-            border-radius: 6px;
-        }
-
-        table.type-chart .type-tag.mini .icon {
-            font-size: 1em;
         }
 
         .chart-cell.mult-4 {
@@ -752,6 +715,7 @@
         </div>
     </div>
 
+    <script src="components/type-tag.js"></script>
     <script src="app.js"></script>
 
 </body>

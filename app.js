@@ -1,46 +1,4 @@
-        const TYPES = [
-            'normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison',
-            'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'
-        ];
-
-        const LABELS = {
-            normal: 'Normal', fire: 'Fogo', water: 'Água', electric: 'Elétrico', grass: 'Planta',
-            ice: 'Gelo', fighting: 'Lutador', poison: 'Venenoso', ground: 'Terra', flying: 'Voador',
-            psychic: 'Psíquico', bug: 'Inseto', rock: 'Pedra', ghost: 'Fantasma', dragon: 'Dragão',
-            dark: 'Sombrio', steel: 'Aço', fairy: 'Fada'
-        };
-
-        const ICONS = {
-            normal: '⭐', fire: '🔥', water: '💧', electric: '⚡', grass: '🌿',
-            ice: '❄️', fighting: '👊', poison: '☠️', ground: '🌍', flying: '🌪️',
-            psychic: '🔮', bug: '🐛', rock: '🪨', ghost: '👻', dragon: '🐉',
-            dark: '🌙', steel: '⚙️', fairy: '✨'
-        };
-
-        // abreviações oficiais de 3 letras (padrão de charts/telas de status dos jogos)
-        const ABBR = {
-            normal: 'NRM', fire: 'FIR', water: 'WTR', electric: 'ELC', grass: 'GRS',
-            ice: 'ICE', fighting: 'FGT', poison: 'PSN', ground: 'GRD', flying: 'FLY',
-            psychic: 'PSY', bug: 'BUG', rock: 'RCK', ghost: 'GHO', dragon: 'DRG',
-            dark: 'DRK', steel: 'STL', fairy: 'FRY'
-        };
-
-        // ---- componente de tag: 1 tipo = pill sólida; 2 tipos = pill cortada na cor ----
-        // opts.abbr troca o nome completo pela abreviação de 3 letras (chips do grid de seleção)
-        function typeTagHTML(types, opts = {}) {
-            if (!Array.isArray(types)) types = [types];
-            const isCombo = types.length === 2;
-            const bg = isCombo
-                ? `linear-gradient(90deg, var(--t-${types[0]}) 50%, var(--t-${types[1]}) 50%)`
-                : `var(--t-${types[0]})`;
-            const icons = types.map(t => ICONS[t]).join('');
-            const dict = opts.abbr ? ABBR : LABELS;
-            const names = types.map(t => dict[t]).join('/');
-            const fullNames = types.map(t => LABELS[t]).join('/');
-            return `<span class="type-tag${isCombo ? ' combo' : ''}" style="background:${bg}" title="${fullNames}">` +
-                `<span class="icon">${icons}</span>${names}` +
-                `</span>`;
-        }
+        // TYPES, LABELS, ABBR, typeIconHTML e typeTagHTML vêm de components/type-tag.js
 
         const CHART = {
             normal: { rock: 0.5, ghost: 0, steel: 0.5 },
@@ -103,7 +61,7 @@
             chip.className = 'type-chip';
             chip.innerHTML = `
     <input type="checkbox" id="chk-${t}" value="${t}">
-    <label for="chk-${t}">${typeTagHTML(t, { abbr: true })}</label>
+    <label for="chk-${t}">${typeTagHTML(t, { stack: true })}</label>
   `;
             grid.appendChild(chip);
         });
@@ -213,9 +171,9 @@
             const title = document.getElementById('results-title');
             title.textContent = 'Resultado — tipos agrupados por dano causado no alvo';
 
-            const banner = `<div class="target-banner">Alvo: ${typeTagHTML(target)}</div>`;
+            const banner = `<div class="target-banner">Alvo: ${typeTagHTML(target, { stack: true })}</div>`;
 
-            const TIERS = [4, 2, 1, 0.5, 0.25, 0];
+            const TIERS = [4, 2, 0.5, 0.25, 0];
             const tierRows = TIERS.map(tierValue => {
                 const group = entries
                     .filter(e => e.dano === tierValue)
@@ -223,7 +181,7 @@
 
                 if (group.length === 0) return '';
 
-                const tags = group.map(e => `<span class="tier-entry">${typeTagHTML(e.combo)}</span>`).join('');
+                const tags = group.map(e => `<span class="tier-entry">${typeTagHTML(e.combo, { stack: true })}</span>`).join('');
 
                 return `
       <div class="tier-row">
@@ -255,16 +213,16 @@
             const title = document.getElementById('results-title');
             title.textContent = 'Resultado — tipos agrupados pelo pior dano recebido';
 
-            const banner = `<div class="target-banner">Enfrentando: ${selected.map(t => typeTagHTML(t)).join(' ')}</div>`;
+            const banner = `<div class="target-banner">Enfrentando: ${selected.map(t => typeTagHTML(t, { stack: true })).join(' ')}</div>`;
 
             // ordem do melhor pro pior caso de defesa
-            const TIERS = [0, 0.25, 0.5, 1, 2, 4];
+            const TIERS = [0, 0.25, 0.5, 2, 4];
 
             const tierRows = TIERS.map(tierValue => {
                 const group = entries.filter(e => e.recebe === tierValue);
                 if (group.length === 0) return '';
 
-                const tags = group.map(e => typeTagHTML(e.combo)).join('');
+                const tags = group.map(e => typeTagHTML(e.combo, { stack: true })).join('');
 
                 return `
       <div class="tier-row">
@@ -280,8 +238,7 @@
 
         // ---------- tabela completa interativa ----------
         function iconOnlyTag(type) {
-            return `<span class="type-tag mini" style="background:var(--t-${type})" title="${LABELS[type]}">` +
-                `<span class="icon">${ICONS[type]}</span></span>`;
+            return typeTagHTML(type, { stack: true });
         }
 
         function buildChart() {

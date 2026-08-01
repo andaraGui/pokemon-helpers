@@ -26,6 +26,8 @@ for f in "${FILES[@]}"; do
 done
 
 cp "$ROOT/manifest.firefox.json" "$DIST/manifest.json"
+cp -r "$ROOT/icons" "$DIST/icons"
+cp -r "$ROOT/components" "$DIST/components"
 
 rm -f "$ZIP"
 (cd "$DIST" && zip -rq "$ZIP" .)

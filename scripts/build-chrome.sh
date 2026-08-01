@@ -26,6 +26,9 @@ for f in "${FILES[@]}"; do
   cp "$ROOT/$f" "$DIST/$f"
 done
 
+cp -r "$ROOT/icons" "$DIST/icons"
+cp -r "$ROOT/components" "$DIST/components"
+
 rm -f "$ZIP"
 (cd "$DIST" && zip -rq "$ZIP" .)
 

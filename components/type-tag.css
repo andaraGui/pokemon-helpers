@@ -1,0 +1,61 @@
+/* ---------------------------------------------------------------------------
+   Componente de tipo de Pokémon: estilos compartilhados da tag/pill de tipo
+   usados na calculadora (index.html) e em Meus Pokémons (myPokemons.html).
+   --------------------------------------------------------------------------- */
+
+/* ---- Tag de tipo único: ícone + nome/abreviação + cor de fundo ---- */
+.type-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px 4px 8px;
+    border-radius: 100px;
+    font-size: var(--pxl-fs-sm, 0.64rem);
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1.5;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.type-tag .icon {
+    font-size: 0.95em;
+    line-height: 1;
+    display: inline-flex;
+}
+
+.type-icon-img {
+    width: 3em;
+    height: 3em;
+    display: block;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+}
+
+/* ---- Grupo de tipo duplo (dual-type): duas cards lado a lado, agrupadas ---- */
+.type-tag-group {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+/* ---- Variante empilhada: ícone em cima, abreviação embaixo (tabela, chips, resultado) ---- */
+.type-tag.mini {
+    flex-direction: column;
+    gap: 1px;
+    padding: 1px 5px 4px 5px;
+    font-size: var(--pxl-fs-md, 0.8rem);
+    border-radius: 6px;
+}
+
+.type-tag.mini .icon {
+    font-size: 1em;
+}
+
+.type-tag.mini .abbr {
+    color: #fff;
+    font-size: 0.6em;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1;
+}
