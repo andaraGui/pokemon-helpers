@@ -62,9 +62,9 @@
 
         const collapseBtn = buildHeaderButtons(header, [
             { icon: '🧮', title: 'Calculadora', view: 'calc' },
+            { icon: '📊', title: 'Tabela de tipos', view: 'chart' },
             { icon: '⚔️', title: 'Encontro', view: 'battle' },
             { icon: '🖥️', title: 'Meus Pokémons', view: 'myPokemons' },
-            { icon: '📊', title: 'Tabela de tipos', view: 'chart' },
             { icon: '⚙️', title: 'Configurações', view: 'settings' },
         ], { icon: '—', title: 'Recolher' });
 
@@ -233,7 +233,9 @@
                 const battleEnded = !!(data.state && data.state.over === true);
 
                 if (isCharacterPayload && !battleEnded) {
-                    if (overlay.dataset.activeView !== 'myPokemons') {
+                    // só troca sozinho a partir da view ociosa (calc); assim não
+                    // atropela navegação manual pra outras abas (config, tabela...).
+                    if ((overlay.dataset.activeView || 'calc') === 'calc') {
                         if (overlay.classList.contains('collapsed')) {
                             setCollapsed(overlay, currentSettings(overlay), false);
                         }
