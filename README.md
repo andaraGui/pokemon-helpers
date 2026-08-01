@@ -17,7 +17,7 @@ que o reload pegou os arquivos novos.
 
 | Arquivo | Contexto | Papel |
 |---|---|---|
-| `background.js` | service worker | Injeta `content.js` e `interceptor.js` no clique/atalho |
+| `background.js` | service worker | Injeta `content.js` e `interceptor.js` no clique/atalho, e automaticamente ao carregar uma página em `infinitymmo.net` (via `host_permissions`) |
 | `interceptor.js` | MAIN world da página | Hook do `window.fetch` |
 | `content.js` | isolated world | Overlay, abas, foco/desfoco automático |
 | `index.html`/`app.js` | iframe | Calculadora de tipos |
@@ -36,10 +36,19 @@ atualizar sem precisar recarregar a página; só o patch do `fetch` em si
 acontece uma vez por carregamento (`window.__pkmnHelperFetchPatched`).
 
 `content.js` decide pelo formato do payload, não pela URL exata:
-- `data.foe` presente → foca na aba Encontro. Não existe mais um estado de
-  "fim de batalha" separado: `battle.js` guarda o último `foe` recebido e só
-  mescla campos novos por cima dele, porque respostas de turno (ex: atacar)
-  nem sempre reenviam o objeto `foe` completo.
+- `data.foe` presente → foca na aba Encontro (abrindo o overlay se estiver
+  colapsado). Não existe mais um estado de "fim de batalha" separado:
+  `battle.js` guarda o último `foe` recebido e só mescla campos novos por
+  cima dele, porque respostas de turno (ex: atacar) nem sempre reenviam o
+  objeto `foe` completo.
+- `data.party`/`data.pc` presente (sync de personagem) → não abre o overlay
+  nem troca de aba sozinho, porque esse payload chega passivamente sempre
+  que o jogo sincroniza (não só quando o jogador abre a tela de time).
+- `data.state.over === true` (fim de luta) → se a aba Encontro tinha sido
+  focada automaticamente pro `data.foe`, volta pra aba que estava aberta
+  antes (`overlay.dataset.preBattleView`). Usado só pra decidir a aba do
+  overlay — `battle.js` ignora esse campo de propósito, pra não virar um
+  estado de tela separado ali (ver histórico do bug de "resultado").
 
 ## DevTools
 

@@ -1,20 +1,44 @@
 (function () {
     const ID = 'pokemon-type-matchup-overlay';
-    const existing = document.getElementById(ID);
-    if (existing) {
-        existing.remove();
-        const style = document.getElementById('pokemon-helper-style');
-        if (style) style.remove();
-        return;
-    }
-
     const STORAGE_KEY = 'pkmnHelperSettings';
-    const DEFAULT_SETTINGS = { top: 16, right: 16, width: 300, height: 360, collapsed: true, view: 'calc' };
+    const DEFAULT_SETTINGS = { top: 16, right: 16, width: 300, height: 360, collapsed: true, view: 'calc', open: true };
     const MIN_WIDTH = 220;
     const MIN_HEIGHT = 180;
 
+    // 'toggle' (ícone/atalho) fecha se já existir; 'ensure' (injeção automática
+    // ao carregar a página) nunca fecha o que já está aberto — só garante que
+    // exista, senão um F5 rápido pode disparar essa injeção mais de uma vez
+    // e derrubar um overlay recém-minimizado.
+    const mode = window.__pkmnHelperInjectMode || 'toggle';
+    delete window.__pkmnHelperInjectMode;
+
+    const existing = document.getElementById(ID);
+    if (existing) {
+        if (mode === 'ensure') return;
+        existing.remove();
+        const style = document.getElementById('pokemon-helper-style');
+        if (style) style.remove();
+        // fechado explicitamente: não deixa a injeção automática reabrir sozinha
+        persist(Object.assign({}, currentSettings(existing), { open: false }));
+        return;
+    }
+
+    // a leitura do storage é assíncrona, e o <div> só entra no DOM depois que
+    // ela resolve — se 'ensure' disparar mais de uma vez pra mesma navegação
+    // (tabs.onUpdated pode emitir 'complete' repetido), a checagem de
+    // `existing` acima não vê nada ainda em nenhuma das duas e cada uma monta
+    // seu próprio overlay duplicado. Essa flag síncrona reserva a construção
+    // antes do await, então a segunda chamada desiste na hora.
+    if (mode === 'ensure') {
+        if (window.__pkmnHelperEnsurePending) return;
+        window.__pkmnHelperEnsurePending = true;
+    }
+
     chrome.storage.local.get(STORAGE_KEY, (res) => {
+        if (mode === 'ensure') window.__pkmnHelperEnsurePending = false;
         const settings = Object.assign({}, DEFAULT_SETTINGS, res[STORAGE_KEY] || {});
+        if (mode === 'ensure' && settings.open === false) return;
+        settings.open = true;
         build(settings);
     });
 
@@ -111,7 +135,7 @@
             const onUp = () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup', onUp);
-                persist(settings);
+                persist(currentSettings(container));
             };
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup', onUp);
@@ -155,7 +179,7 @@
                 const onUp = () => {
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup', onUp);
-                    persist(settings);
+                    persist(currentSettings(container));
                 };
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
@@ -189,20 +213,26 @@
                 if (!overlay) return;
 
                 const isCharacterPayload = !!(data.party || data.pc);
+                // sinal real de fim de luta: só usado aqui pra saber quando voltar
+                // pra aba anterior — battle.js ignora isso de propósito (ele só olha
+                // pra presença de `foe`), esse "over" não deve virar estado de tela lá.
+                const battleEnded = !!(data.state && data.state.over === true);
 
                 if (isCharacterPayload) {
-                    if (overlay.classList.contains('collapsed')) {
-                        setCollapsed(overlay, currentSettings(overlay), false);
-                    }
-                    // sync de personagem costuma chegar logo após o fim da luta;
-                    // se estávamos na aba Encontro por causa dela, volta pra aba
-                    // que estava aberta antes, em vez de sempre ir pra Meus Pokémons.
+                    // esse payload chega passivamente sempre que o jogo sincroniza o
+                    // personagem (não só quando o jogador abre a tela de time), então
+                    // não deve abrir o overlay nem trocar de aba sozinho.
+                    if (!battleEnded) return;
+                }
+
+                if (battleEnded) {
                     const returnView = overlay.dataset.preBattleView;
                     if (returnView) {
                         delete overlay.dataset.preBattleView;
+                        if (overlay.classList.contains('collapsed')) {
+                            setCollapsed(overlay, currentSettings(overlay), false);
+                        }
                         setActiveView(returnView, overlay);
-                    } else {
-                        setActiveView('myPokemons', overlay);
                     }
                     return;
                 }
@@ -396,7 +426,7 @@
         settings.collapsed = collapsed;
         container.classList.toggle('collapsed', collapsed);
         if (!collapsed) applyBox(container, settings);
-        persist(settings);
+        persist(currentSettings(container));
     }
 
     function currentSettings(container) {
@@ -407,6 +437,7 @@
             height: parseInt(container.style.height, 10) || DEFAULT_SETTINGS.height,
             collapsed: container.classList.contains('collapsed'),
             view: container.dataset.activeView || DEFAULT_SETTINGS.view,
+            open: true,
         };
     }
 
