@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
   "name": "IfinityMMO Helper",
-  "version": "1.4.42",
+  "version": "1.4.43",
   "description": "",
   "action": {},
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["activeTab", "scripting", "storage"],
-  "host_permissions": ["*://infinitymmo.net/*", "*://*.infinitymmo.net/*"],
+  "permissions": ["activeTab", "alarms", "scripting", "storage"],
+  "host_permissions": ["*://infinitymmo.net/*", "*://*.infinitymmo.net/*", "https://raw.githubusercontent.com/andaraGui/pokemon-helpers/*"],
   "commands": {
     "toggle-overlay": {
       "suggested_key": { "default": "Ctrl+Shift+Y" },

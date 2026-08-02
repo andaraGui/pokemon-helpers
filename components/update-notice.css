@@ -1,0 +1,14 @@
+.update-notice {
+    max-width: 980px;
+    margin: 0 auto 14px;
+    padding: 9px 12px;
+    border: 2px solid #000;
+    background: #f7d02c;
+    color: #1a1a1a;
+    font-family: 'Press Start 2P', 'Courier New', ui-monospace, monospace;
+    font-size: var(--pxl-fs-xs, 0.52rem);
+    font-weight: 700;
+    line-height: 1.5;
+    text-align: center;
+    box-sizing: border-box;
+}

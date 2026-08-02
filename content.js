@@ -1,7 +1,6 @@
 (function () {
     const ID = 'pokemon-type-matchup-overlay';
-    const STORAGE_KEY = 'pkmnHelperSettings';
-    const DEFAULT_SETTINGS = { top: 16, right: 16, width: 300, height: 360, collapsed: true, view: 'calc', open: true };
+    const DEFAULT_SETTINGS = PokemonHelperStorage.DEFAULT_OVERLAY_SETTINGS;
     const MIN_WIDTH = 220;
     const MIN_HEIGHT = 180;
 
@@ -34,12 +33,16 @@
         window.__pkmnHelperEnsurePending = true;
     }
 
-    chrome.storage.local.get(STORAGE_KEY, (res) => {
+    PokemonHelperStorage.getOverlaySettings().then((storedSettings) => {
         if (mode === 'ensure') window.__pkmnHelperEnsurePending = false;
-        const settings = Object.assign({}, DEFAULT_SETTINGS, res[STORAGE_KEY] || {});
+        const settings = Object.assign({}, DEFAULT_SETTINGS, storedSettings);
         if (mode === 'ensure' && settings.open === false) return;
         settings.open = true;
         build(settings);
+    }).catch((error) => {
+        if (mode === 'ensure') window.__pkmnHelperEnsurePending = false;
+        console.warn('[Pokemon Helper] Não foi possível carregar as configurações:', error);
+        build(Object.assign({}, DEFAULT_SETTINGS, { open: true }));
     });
 
     function build(settings) {
@@ -357,6 +360,41 @@
             }
             #${ID} .ph-btn-shortcut { width: 100%; margin-bottom: 4px; }
             #${ID} .ph-hint { color: #9198ab; font-size: var(--pxl-fs-sm); margin: 4px 0 14px; }
+            #${ID} .ph-setting-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+            #${ID} .ph-setting-row[hidden] { display: none; }
+            #${ID} .ph-setting-label { line-height: 1.5; }
+            #${ID} .ph-toggle {
+                position: relative;
+                flex: 0 0 auto;
+                width: 42px;
+                height: 22px;
+                padding: 0;
+                border: 2px solid #000;
+                border-radius: 0;
+                background: #2e3240;
+                cursor: pointer;
+            }
+            #${ID} .ph-toggle::after {
+                content: '';
+                position: absolute;
+                top: 3px;
+                left: 3px;
+                width: 12px;
+                height: 12px;
+                background: #9198ab;
+                transition: transform 0.15s ease;
+            }
+            #${ID} .ph-toggle[aria-checked="true"] { background: #235c3c; }
+            #${ID} .ph-toggle[aria-checked="true"]::after {
+                background: #57c785;
+                transform: translateX(20px);
+            }
             #${ID} .ph-resize-handle {
                 position: absolute;
                 z-index: 10;
@@ -415,6 +453,16 @@
         panel.className = 'ph-settings';
         panel.id = 'pokemon-settings-panel';
         panel.innerHTML = `
+            <h3>Atualizações</h3>
+            <div class="ph-setting-row">
+                <span class="ph-setting-label" id="ph-update-notifications-label">Avisar sobre atualizações</span>
+                <button type="button" class="ph-toggle" id="ph-update-notifications" role="switch" aria-checked="false" aria-labelledby="ph-update-notifications-label"></button>
+            </div>
+            <div class="ph-setting-row" id="ph-beta-channel-row" hidden>
+                <span class="ph-setting-label" id="ph-beta-channel-label">Usar beta</span>
+                <button type="button" class="ph-toggle" id="ph-beta-channel" role="switch" aria-checked="false" aria-labelledby="ph-beta-channel-label"></button>
+            </div>
+            <p class="ph-hint">O padrão verifica a branch main. O beta verifica a branch develop.</p>
             <h3>Atalho de teclado</h3>
             <button type="button" class="ph-btn-shortcut pxl-btn pxl-btn-sm" id="ph-set-shortcut">Configurar atalho de abrir/fechar</button>
             <p class="ph-hint">Abre a página de atalhos do Chrome, onde dá pra definir a combinação de teclas que abre e fecha esta extensão em qualquer aba.</p>
@@ -422,6 +470,44 @@
 
         panel.querySelector('#ph-set-shortcut').addEventListener('click', () => {
             chrome.runtime.sendMessage({ type: 'pkmn-helper-open-shortcuts' });
+        });
+
+        const notificationsToggle = panel.querySelector('#ph-update-notifications');
+        const betaToggle = panel.querySelector('#ph-beta-channel');
+        const betaRow = panel.querySelector('#ph-beta-channel-row');
+
+        function setToggleState(toggle, enabled) {
+            toggle.setAttribute('aria-checked', String(enabled));
+        }
+
+        function applyUpdatePreferences(preferences) {
+            setToggleState(notificationsToggle, preferences.notificationsEnabled);
+            setToggleState(betaToggle, preferences.betaChannelEnabled);
+            betaRow.hidden = !preferences.notificationsEnabled;
+        }
+
+        PokemonHelperStorage.getUpdatePreferences()
+            .then(applyUpdatePreferences)
+            .catch((error) => console.warn('[Pokemon Helper] Não foi possível carregar preferências de atualização:', error));
+
+        notificationsToggle.addEventListener('click', () => {
+            const notificationsEnabled = notificationsToggle.getAttribute('aria-checked') !== 'true';
+            setToggleState(notificationsToggle, notificationsEnabled);
+            betaRow.hidden = !notificationsEnabled;
+            PokemonHelperStorage.setUpdatePreferences({ notificationsEnabled }).catch((error) => {
+                setToggleState(notificationsToggle, !notificationsEnabled);
+                betaRow.hidden = notificationsEnabled;
+                console.warn('[Pokemon Helper] Não foi possível salvar a preferência de atualização:', error);
+            });
+        });
+
+        betaToggle.addEventListener('click', () => {
+            const betaChannelEnabled = betaToggle.getAttribute('aria-checked') !== 'true';
+            setToggleState(betaToggle, betaChannelEnabled);
+            PokemonHelperStorage.setUpdatePreferences({ betaChannelEnabled }).catch((error) => {
+                setToggleState(betaToggle, !betaChannelEnabled);
+                console.warn('[Pokemon Helper] Não foi possível salvar a preferência do beta:', error);
+            });
         });
 
         return panel;
@@ -461,7 +547,9 @@
     }
 
     function persist(settings) {
-        chrome.storage.local.set({ [STORAGE_KEY]: settings });
+        PokemonHelperStorage.setOverlaySettings(settings).catch((error) => {
+            console.warn('[Pokemon Helper] Não foi possível salvar as configurações:', error);
+        });
     }
 
     // Busca os elementos por classe (em vez de usar closures) porque o layout

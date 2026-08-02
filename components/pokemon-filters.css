@@ -1,0 +1,242 @@
+.pokemon-advanced-filters {
+    padding: 14px;
+    border: 2px solid #2e3240;
+    background: #1c1f28;
+}
+
+.pokemon-filter-grid,
+.nature-effect-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.filter-field > span,
+.pokemon-filter-section legend {
+    color: #9198ab;
+    font-size: var(--pxl-fs-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.filter-field--checkbox {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+}
+
+.filter-toggle-control {
+    align-self: end;
+    min-height: 34px;
+    padding: 6px 9px;
+    border: 2px solid #000;
+    background: #21242f;
+}
+
+.filter-toggle-control input {
+    position: relative;
+    width: 34px;
+    height: 18px;
+    margin: 0;
+    appearance: none;
+    border: 2px solid #000;
+    background: #2e3240;
+}
+
+.filter-toggle-control input::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 10px;
+    height: 10px;
+    background: #9198ab;
+}
+
+.filter-toggle-control input:checked {
+    background: #235c3c;
+}
+
+.filter-toggle-control input:checked::after {
+    background: #57c785;
+    transform: translateX(16px);
+}
+
+.pokemon-filter-section {
+    min-width: 0;
+    margin: 14px 0 0;
+    padding: 12px 0 0;
+    border: 0;
+    border-top: 1px solid #454b5e;
+}
+
+.pokemon-filter-section legend {
+    padding-right: 8px;
+}
+
+.filter-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+}
+
+.type-filter-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.type-filter-option {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    padding: 4px 6px;
+    border: 2px solid transparent;
+    background: #21242f;
+    color: #e8e9ee;
+    font: inherit;
+    font-size: var(--pxl-fs-xs);
+    cursor: pointer;
+}
+
+.type-filter-option[aria-pressed="true"] {
+    border-color: #f7d02c;
+    background: #2e3240;
+}
+
+.type-filter-option .type-icon-img {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 auto;
+}
+
+.type-filter-option span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.filter-help {
+    margin: 7px 0 0;
+    color: #9198ab;
+    font-size: var(--pxl-fs-xs);
+}
+
+.nature-autocomplete {
+    position: relative;
+    margin-top: 8px;
+}
+
+.nature-autocomplete input {
+    width: 100%;
+}
+
+.nature-dropdown {
+    display: none;
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    border: 2px solid #000;
+    background: #21242f;
+}
+
+.nature-dropdown.open {
+    display: block;
+}
+
+.nature-dropdown button,
+.nature-dropdown > span {
+    display: flex;
+    width: 100%;
+    padding: 8px;
+    border: 0;
+    border-bottom: 1px solid #454b5e;
+    background: transparent;
+    color: #e8e9ee;
+    font: inherit;
+    text-align: left;
+}
+
+.nature-dropdown button {
+    cursor: pointer;
+}
+
+.nature-dropdown button:hover {
+    background: #2e3240;
+}
+
+.nature-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.nature-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 7px;
+    border: 1px solid #454b5e;
+    background: #21242f;
+}
+
+.nature-filter-chip button {
+    margin-left: 6px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #e2637a;
+    font: inherit;
+    cursor: pointer;
+}
+
+.iv-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(58px, 1fr));
+    gap: 7px;
+}
+
+.iv-filter-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: #9198ab;
+    font-size: var(--pxl-fs-xs);
+}
+
+.iv-filter-grid input {
+    width: 100%;
+    min-width: 0;
+    padding: 7px 4px;
+    border: 2px solid #000;
+    background: #14161c;
+    color: #e8e9ee;
+    font: inherit;
+}
+
+.pokemon-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+@media (max-width: 520px) {
+    .iv-filter-grid {
+        grid-template-columns: repeat(3, minmax(58px, 1fr));
+    }
+}
