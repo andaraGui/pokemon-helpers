@@ -27,10 +27,19 @@ const NATURE_EFFECTS = {
     timid: { increases: 'SPE', decreases: 'ATK' }
 };
 
+const NATURE_NAMES = Object.keys(NATURE_EFFECTS).map((nature) => (
+    nature.charAt(0).toUpperCase() + nature.slice(1)
+));
+
+function getNatureEffect(nature) {
+    if (!nature) return null;
+    return NATURE_EFFECTS[String(nature).trim().toLowerCase()] || null;
+}
+
 function natureEffectHTML(nature) {
     if (!nature) return '-';
 
-    const effect = NATURE_EFFECTS[String(nature).trim().toLowerCase()];
+    const effect = getNatureEffect(nature);
     if (!effect) return nature;
 
     const effectHTML = effect.increases === effect.decreases

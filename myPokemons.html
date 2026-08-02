@@ -16,6 +16,9 @@
     >
 
     <link rel="stylesheet" href="components/type-tag.css">
+    <link rel="stylesheet" href="components/nature-effect.css">
+    <link rel="stylesheet" href="components/pokemon-filters.css">
+    <link rel="stylesheet" href="components/update-notice.css">
 
     <style>
         * {
@@ -44,12 +47,87 @@
             margin: 0;
         }
 
+        .pokemon-toolbar {
+            display: grid;
+            gap: 10px;
+            margin: 14px 0 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #2e3240;
+        }
+
+        .pokemon-toolbar-main {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px;
+        }
+
+        .pokemon-filter {
+            width: 100%;
+            min-width: 0;
+            padding: 9px 10px;
+            border: 2px solid #000;
+            outline: 1px solid #454b5e;
+            background: #1c1f28;
+            color: #e8e9ee;
+            font: inherit;
+        }
+
+        .pokemon-filter:focus {
+            outline-color: #f7d02c;
+        }
+
+        .pokemon-advanced-toggle[aria-pressed="true"] {
+            border-color: #f7d02c;
+            color: #f7d02c;
+        }
+
+        .pokemon-toolbar-toggles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+        }
+
+        .pokemon-toggle-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: var(--pxl-fs-xs);
+        }
+
+        .pokemon-switch {
+            position: relative;
+            width: 42px;
+            height: 22px;
+            padding: 0;
+            border: 2px solid #000;
+            background: #2e3240;
+            cursor: pointer;
+        }
+
+        .pokemon-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 12px;
+            height: 12px;
+            background: #9198ab;
+        }
+
+        .pokemon-switch[aria-checked="true"] {
+            background: #235c3c;
+        }
+
+        .pokemon-switch[aria-checked="true"]::after {
+            background: #57c785;
+            transform: translateX(20px);
+        }
+
         .pokemon-section {
             margin-bottom: 32px;
         }
 
-        .section-header,
-        .pc-box-header {
+        .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -57,15 +135,58 @@
             margin-bottom: 12px;
         }
 
-        .section-title,
-        .pc-box-title {
+        .section-title {
             margin: 0;
         }
 
-        .section-counter,
-        .pc-box-counter {
+        .section-counter {
             flex-shrink: 0;
             font-weight: bold;
+        }
+
+        .pokemon-group {
+            padding: 0 0 18px;
+            margin-bottom: 18px;
+            border-bottom: 2px solid #2e3240;
+        }
+
+        .pokemon-group-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            gap: 12px;
+            margin: 0 0 12px;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .group-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: var(--pxl-fs-lg);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .group-counter {
+            flex-shrink: 0;
+            font-weight: 700;
+        }
+
+        .expand-indicator {
+            color: #f7d02c;
+            font-size: var(--pxl-fs-xs);
+        }
+
+        [hidden] {
+            display: none !important;
         }
 
         .pokemon-list {
@@ -74,24 +195,32 @@
                 auto-fit,
                 minmax(260px, 1fr)
             );
+            align-items: start;
             gap: 12px;
+            padding: 0 4px 4px 0;
         }
 
         .pokemon-card {
             position: relative;
             padding: 14px;
-            border: 2px solid currentColor;
-            background: inherit;
+            min-width: 0;
         }
 
-        .pokemon-card-header {
+        .pokemon-card-toggle {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            width: 100%;
             gap: 12px;
             padding-bottom: 10px;
             margin-bottom: 10px;
+            border: 0;
             border-bottom: 1px solid currentColor;
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
         }
 
         .pokemon-icon {
@@ -102,13 +231,24 @@
 
         .pokemon-name {
             min-width: 0;
-            overflow: hidden;
             font-weight: bold;
-            text-overflow: ellipsis;
-            white-space: nowrap;
             display: flex;
             align-items: center;
             justify-content: flex-start;
+        }
+
+        .pokemon-name-text {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pokemon-icon-fallback {
+            flex: 0 0 auto;
+            width: 30px;
+            height: 30px;
+            margin: 5px 16px 5px 5px;
         }
 
         .type-icon-img {
@@ -132,9 +272,7 @@
         }
 
         .pokemon-card-body {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 10px;
+            display: block;
         }
 
         .pokemon-info {
@@ -145,12 +283,11 @@
         }
 
         .pokemon-info-row {
-            display: flex;
-            flex-direction: row;
-            gap: 4px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+            gap: 10px;
             min-width: 0;
-            align-items: center;
-            justify-content: space-between;
+            align-items: start;
         }
 
         .pokemon-label {
@@ -163,6 +300,103 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+
+        .pokemon-nature-value {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            overflow: hidden;
+            white-space: normal;
+        }
+
+        .pokemon-nature-value .nature-effects {
+            flex-wrap: nowrap;
+            gap: 4px;
+            margin-left: 4px;
+        }
+
+        .pokemon-info--ivs {
+            align-items: flex-end;
+            text-align: right;
+        }
+
+        .pokemon-details {
+            display: grid;
+            gap: 14px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #454b5e;
+        }
+
+        .pokemon-details-section h4 {
+            margin: 0 0 8px;
+            color: #9198ab;
+            font-size: var(--pxl-fs-xs);
+            text-transform: uppercase;
+        }
+
+        .pokemon-iv-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px 12px;
+        }
+
+        .pokemon-iv {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .pokemon-iv strong[data-level="high"] { color: #57c785; }
+        .pokemon-iv strong[data-level="mid"] { color: #f7d02c; }
+        .pokemon-iv strong[data-level="low"] { color: #e2637a; }
+
+        .pokemon-moves {
+            display: grid;
+            gap: 6px;
+        }
+
+        .pokemon-move {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #2e3240;
+        }
+
+        .pokemon-move:last-child {
+            border-bottom: 0;
+        }
+
+        .pokemon-move-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 700;
+        }
+
+        .pokemon-move-category {
+            color: #9198ab;
+            font-size: var(--pxl-fs-xs);
+        }
+
+        .pokemon-move-type {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pokemon-move-type .type-icon-img {
+            width: 26px;
+            height: 26px;
+            margin-left: 0;
+        }
+
+        .pokemon-details-empty {
+            margin: 0;
+            color: #9198ab;
         }
 
         .pokemon-slot {
@@ -180,11 +414,11 @@
         .pc-boxes {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 0;
         }
 
         .pc-box {
-            padding: 16px;
+            padding-top: 14px;
         }
 
         .empty {
@@ -205,12 +439,27 @@
             }
 
             .pokemon-card-body {
+                display: block;
+            }
+
+            .section-header {
+                align-items: flex-start;
+            }
+
+            .pokemon-toolbar-toggles {
+                flex-direction: column;
+            }
+
+            .pokemon-toolbar-main {
                 grid-template-columns: 1fr;
             }
 
-            .section-header,
-            .pc-box-header {
-                align-items: flex-start;
+            .pokemon-move {
+                grid-template-columns: minmax(0, 1fr) auto;
+            }
+
+            .pokemon-move-category {
+                grid-column: 1 / -1;
             }
         }
     </style>
@@ -220,6 +469,24 @@
     <main class="page-container">
         <h2><span class="pxl-pokeball" style="margin-right:6px;"></span>Meus Pokemons</h2>
 
+        <div class="pokemon-toolbar">
+            <div class="pokemon-toolbar-main">
+                <input type="search" class="pokemon-filter" id="pokemon-name-filter" placeholder="Filtrar Pokémon por nome" aria-label="Filtrar Pokémon por nome">
+                <button type="button" class="pokemon-advanced-toggle pxl-btn pxl-btn-sm" id="toggle-advanced-filters" aria-pressed="false">Filtros avançados</button>
+            </div>
+            <div class="pokemon-toolbar-toggles">
+                <label class="pokemon-toggle-row" id="expand-all-groups-row">
+                    <button type="button" class="pokemon-switch" id="expand-all-groups" role="switch" aria-checked="false"></button>
+                    <span>Expandir todos os grupos</span>
+                </label>
+                <label class="pokemon-toggle-row">
+                    <button type="button" class="pokemon-switch" id="expand-all-pokemon" role="switch" aria-checked="false"></button>
+                    <span>Expandir todos os Pokémon</span>
+                </label>
+            </div>
+            <div class="pokemon-advanced-filters" id="pokemon-advanced-filters" hidden></div>
+        </div>
+
         <div id="content">
             <p class="empty">
                 Aguardando os dados dos Pokémon...
@@ -227,7 +494,11 @@
         </div>
     </main>
 
+    <script src="data/extension-storage.js"></script>
+    <script src="components/update-notice.js"></script>
     <script src="components/type-tag.js"></script>
+    <script src="components/nature-effect.js"></script>
+    <script src="components/pokemon-filters.js"></script>
     <script src="data/constants.js"></script>
     <script src="myPokemons.js"></script>
 </body>
