@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="pixel-theme.css">
     <link rel="stylesheet" href="components/nature-effect.css">
     <link rel="stylesheet" href="components/update-notice.css">
+    <link rel="stylesheet" href="components/ability-info.css">
     <style>
         * {
             box-sizing: border-box;
@@ -78,6 +79,22 @@
             padding: 3px 0;
         }
 
+        .recommendation { padding: 8px; border: 1px solid #4c556c; background: #1b1e27; line-height: 1.5; }
+        .recommendation strong { color: #57c785; }
+        .stage { display: inline-block; min-width: 28px; padding: 2px 4px; text-align: center; }
+        .stage.up { color: #57c785; }
+        .stage.down { color: #e2637a; }
+        .ball-rate { color: #79b8ff; }
+        .stats-grid, .ivs-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; }
+        .iv-rating[data-rating="ruim"] { color: #e2637a; }
+        .iv-rating[data-rating="medio"] { color: #f7d02c; }
+        .iv-rating[data-rating="bom"] { color: #57c785; }
+        .iv-rating[data-rating="muito-bom"] { color: #58a6ff; }
+        .iv-rating[data-rating="excelente"] { color: #c084fc; }
+        .gotcha { padding: 12px; text-align: center; }
+        .gotcha-badge { display: inline-block; padding: 9px 14px; background: #57c785; color: #06210f; border: 2px solid #000; box-shadow: 3px 3px 0 #000; }
+        .gotcha p { margin: 10px 0 0; color: #e8e9ee; }
+
         .pxl-hp {
             padding: 6px 0 10px;
         }
@@ -92,6 +109,9 @@
     <script src="data/extension-storage.js"></script>
     <script src="components/update-notice.js"></script>
     <script src="components/nature-effect.js"></script>
+    <script src="components/ability-info.js"></script>
+    <script src="components/iv-evaluation.js"></script>
+    <script src="components/catch-rate.js"></script>
     <script src="battle.js"></script>
 </body>
 

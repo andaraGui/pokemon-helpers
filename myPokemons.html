@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="components/nature-effect.css">
     <link rel="stylesheet" href="components/pokemon-filters.css">
     <link rel="stylesheet" href="components/update-notice.css">
+    <link rel="stylesheet" href="components/ability-info.css">
 
     <style>
         * {
@@ -302,6 +303,17 @@
             white-space: nowrap;
         }
 
+        .pokemon-value[data-ability] {
+            position: relative;
+            overflow: visible;
+            white-space: normal;
+        }
+
+        .pokemon-card:focus-within,
+        .pokemon-card:hover {
+            z-index: 5;
+        }
+
         .pokemon-nature-value {
             display: flex;
             align-items: center;
@@ -351,6 +363,38 @@
         .pokemon-iv strong[data-level="high"] { color: #57c785; }
         .pokemon-iv strong[data-level="mid"] { color: #f7d02c; }
         .pokemon-iv strong[data-level="low"] { color: #e2637a; }
+
+        .pokemon-iv-assessment {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .pokemon-iv-assessment .evaluation-info {
+            position: static;
+        }
+
+        .pokemon-iv-assessment .evaluation-info::after {
+            right: auto;
+            left: 0;
+            width: min(180px, 100%);
+        }
+
+        .pokemon-assessment-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px;
+            border: 1px solid #454b5e;
+        }
+
+        .pokemon-assessment-label { color: #9198ab; font-size: var(--pxl-fs-xs); }
+        .iv-rating[data-rating="ruim"] { color: #e2637a; }
+        .iv-rating[data-rating="medio"] { color: #f7d02c; }
+        .iv-rating[data-rating="bom"] { color: #57c785; }
+        .iv-rating[data-rating="muito-bom"] { color: #58a6ff; }
+        .iv-rating[data-rating="excelente"] { color: #c084fc; }
 
         .pokemon-moves {
             display: grid;
@@ -498,6 +542,8 @@
     <script src="components/update-notice.js"></script>
     <script src="components/type-tag.js"></script>
     <script src="components/nature-effect.js"></script>
+    <script src="components/ability-info.js"></script>
+    <script src="components/iv-evaluation.js"></script>
     <script src="components/pokemon-filters.js"></script>
     <script src="data/constants.js"></script>
     <script src="myPokemons.js"></script>

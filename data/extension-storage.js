@@ -4,7 +4,9 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
     const KEYS = Object.freeze({
         overlaySettings: 'pkmnHelperSettings',
         updatePreferences: 'pkmnHelperUpdatePreferences',
-        updateStatus: 'pkmnHelperUpdateStatus'
+        updateStatus: 'pkmnHelperUpdateStatus',
+        abilities: 'pkmnHelperAbilities',
+        pokedex: 'pkmnHelperPokedex'
     });
 
     const DEFAULT_OVERLAY_SETTINGS = Object.freeze({
@@ -12,6 +14,9 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         right: 16,
         width: 300,
         height: 360,
+        maximized: false,
+        restoreWidth: null,
+        restoreRight: null,
         collapsed: true,
         view: 'calc',
         open: true
@@ -72,7 +77,11 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         getUpdatePreferences: () => read(KEYS.updatePreferences, DEFAULT_UPDATE_PREFERENCES),
         setUpdatePreferences: (changes) => update(KEYS.updatePreferences, DEFAULT_UPDATE_PREFERENCES, changes),
         getUpdateStatus: () => read(KEYS.updateStatus, DEFAULT_UPDATE_STATUS),
-        setUpdateStatus: (status) => write(KEYS.updateStatus, Object.assign({}, DEFAULT_UPDATE_STATUS, status))
+        setUpdateStatus: (status) => write(KEYS.updateStatus, Object.assign({}, DEFAULT_UPDATE_STATUS, status)),
+        getAbilities: () => read(KEYS.abilities, { items: [], checkedAt: null, error: null }),
+        setAbilities: (value) => write(KEYS.abilities, value),
+        getPokedex: () => read(KEYS.pokedex, { items: [], checkedAt: null, error: null }),
+        setPokedex: (value) => write(KEYS.pokedex, value)
     });
 })();
 

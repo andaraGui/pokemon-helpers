@@ -13,15 +13,29 @@
 
     const originalFetch = window.fetch;
     window.fetch = async function (...args) {
+        const input = args[0];
+        const url = typeof input === 'string' ? input : (input && input.url) || '';
+        let requestActionPromise = Promise.resolve(null);
+        if (window.__pkmnHelperBattleUrlRe.test(url)) {
+            const initBody = args[1] && args[1].body;
+            if (typeof initBody === 'string') {
+                requestActionPromise = Promise.resolve().then(() => {
+                    const body = JSON.parse(initBody);
+                    return { battleId: body.battleId || null, action: body.action || null };
+                }).catch(() => null);
+            } else if (input && typeof input.clone === 'function') {
+                requestActionPromise = input.clone().json().then((body) => ({ battleId: body?.battleId || null, action: body?.action || null })).catch(() => null);
+            }
+        }
         const response = await originalFetch.apply(this, args);
         try {
-            const input = args[0];
-            const url = typeof input === 'string' ? input : (input && input.url) || '';
             if (window.__pkmnHelperBattleUrlRe.test(url)) {
                 response
                     .clone()
                     .json()
-                    .then((data) => {
+                    .then(async (data) => {
+                        const request = await requestActionPromise;
+                        if (request) data.__pokemonHelperRequest = request;
                         window.dispatchEvent(new CustomEvent('pkmn-helper-battle-data', { detail: data }));
                     })
                     .catch(() => {});
