@@ -5,7 +5,68 @@ if (typeof PokemonHelperStorage === 'undefined') {
 const HOST_RE = /^https?:\/\/([^/]*\.)?infinitymmo\.net(\/|$)/;
 const UPDATE_ALARM = 'pkmn-helper-check-updates';
 const UPDATE_INTERVAL_MINUTES = 360;
+const ABILITIES_ALARM = 'pkmn-helper-refresh-abilities';
+const ABILITIES_URL = 'https://infinitymmo.net/assets/data/wiki-abilities.json';
+const ABILITIES_MAX_AGE = 24 * 60 * 60 * 1000;
+const POKEDEX_ALARM = 'pkmn-helper-refresh-pokedex';
+const POKEDEX_URL = 'https://infinitymmo.net/assets/data/wiki-pokedex.json';
+const POKEDEX_MAX_AGE = 24 * 60 * 60 * 1000;
 let updateCheckPromise = null;
+let abilityCheckPromise = null;
+let pokedexCheckPromise = null;
+
+async function refreshAbilities(force = false) {
+    if (abilityCheckPromise) return abilityCheckPromise;
+    abilityCheckPromise = (async () => {
+        const cached = await PokemonHelperStorage.getAbilities();
+        const age = Date.now() - new Date(cached.checkedAt || 0).getTime();
+        if (!force && cached.items.length && age < ABILITIES_MAX_AGE) return cached;
+        try {
+            const response = await fetch(ABILITIES_URL, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`InfinityMMO respondeu com status ${response.status}`);
+            const payload = await response.json();
+            const items = Array.isArray(payload) ? payload : payload.abilities;
+            if (!Array.isArray(items)) throw new Error('Lista de habilidades inválida');
+            return PokemonHelperStorage.setAbilities({ items, checkedAt: new Date().toISOString(), error: null });
+        } catch (error) {
+            await PokemonHelperStorage.setAbilities({ ...cached, error: error.message });
+            console.warn('[Pokemon Helper] Não foi possível atualizar habilidades:', error);
+            return cached;
+        }
+    })().finally(() => { abilityCheckPromise = null; });
+    return abilityCheckPromise;
+}
+
+async function refreshPokedex(force = false) {
+    if (pokedexCheckPromise) return pokedexCheckPromise;
+    pokedexCheckPromise = (async () => {
+        const cached = await PokemonHelperStorage.getPokedex();
+        const age = Date.now() - new Date(cached.checkedAt || 0).getTime();
+        if (!force && cached.items.length && age < POKEDEX_MAX_AGE) return cached;
+        try {
+            const response = await fetch(POKEDEX_URL, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`InfinityMMO respondeu com status ${response.status}`);
+            const payload = await response.json();
+            const remoteItems = Array.isArray(payload) ? payload : payload.mons;
+            if (!Array.isArray(remoteItems)) {
+                throw new Error('Pokédex remota inválida');
+            }
+            const items = remoteItems.filter((item) => item?.slug && Number.isFinite(Number(item.catchRate))).map((item) => ({
+                slug: item.slug,
+                name: item.name,
+                catchRate: Number(item.catchRate),
+                base: item.base || null
+            }));
+            if (!items.length) throw new Error('Pokédex remota sem catch rates válidos');
+            return PokemonHelperStorage.setPokedex({ items, checkedAt: new Date().toISOString(), error: null });
+        } catch (error) {
+            await PokemonHelperStorage.setPokedex({ ...cached, error: error.message });
+            console.warn('[Pokemon Helper] Não foi possível atualizar a Pokédex:', error);
+            return cached;
+        }
+    })().finally(() => { pokedexCheckPromise = null; });
+    return pokedexCheckPromise;
+}
 
 function compareVersions(left, right) {
     const leftParts = String(left).split('.').map(Number);
@@ -88,6 +149,9 @@ async function initializeUpdateChecks() {
     const preferences = await PokemonHelperStorage.getUpdatePreferences();
     setUpdateAlarm(preferences.notificationsEnabled);
     if (preferences.notificationsEnabled) await checkForUpdates();
+    chrome.alarms.create(ABILITIES_ALARM, { periodInMinutes: 1440 });
+    chrome.alarms.create(POKEDEX_ALARM, { periodInMinutes: 1440 });
+    await Promise.all([refreshAbilities(), refreshPokedex()]);
 }
 
 // 'toggle': ícone/atalho — fecha o overlay se já estiver aberto.
@@ -134,10 +198,14 @@ chrome.runtime.onMessage.addListener((msg) => {
         const isFirefox = typeof browser !== 'undefined';
         chrome.tabs.create({ url: isFirefox ? 'about:addons' : 'chrome://extensions/shortcuts' });
     }
+    if (msg && msg.type === 'pkmn-helper-refresh-abilities') refreshAbilities();
+    if (msg && msg.type === 'pkmn-helper-refresh-pokedex') refreshPokedex();
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === UPDATE_ALARM) checkForUpdates();
+    if (alarm.name === ABILITIES_ALARM) refreshAbilities(true);
+    if (alarm.name === POKEDEX_ALARM) refreshPokedex(true);
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {

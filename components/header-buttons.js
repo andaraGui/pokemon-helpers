@@ -8,7 +8,7 @@
 // items: [{ icon, title, view }]
 // collapseItem: { icon, title }
 // Retorna o botão de recolher, já anexado ao header (o chamador cuida do listener).
-function buildHeaderButtons(header, items, collapseItem) {
+function buildHeaderButtons(header, items, collapseItem, maximizeItem = { icon: '↗', title: 'Maximizar' }) {
     items.forEach((item) => {
         const btn = document.createElement('button');
         btn.className = 'ph-icon-btn ph-view-btn pxl-icon-btn';
@@ -22,11 +22,17 @@ function buildHeaderButtons(header, items, collapseItem) {
     spacer.className = 'ph-spacer';
     header.appendChild(spacer);
 
+    const maximizeBtn = document.createElement('button');
+    maximizeBtn.className = 'ph-icon-btn ph-maximize-btn pxl-icon-btn';
+    maximizeBtn.textContent = maximizeItem.icon;
+    maximizeBtn.title = maximizeItem.title;
+    header.appendChild(maximizeBtn);
+
     const collapseBtn = document.createElement('button');
     collapseBtn.className = 'ph-icon-btn pxl-icon-btn';
     collapseBtn.textContent = collapseItem.icon;
     collapseBtn.title = collapseItem.title;
     header.appendChild(collapseBtn);
 
-    return collapseBtn;
+    return { collapseBtn, maximizeBtn };
 }
