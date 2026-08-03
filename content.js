@@ -1,21 +1,48 @@
 (function () {
     const ID = 'pokemon-type-matchup-overlay';
-    const existing = document.getElementById(ID);
-    if (existing) {
-        existing.remove();
-        const style = document.getElementById('pokemon-helper-style');
-        if (style) style.remove();
-        return;
-    }
-
-    const STORAGE_KEY = 'pkmnHelperSettings';
-    const DEFAULT_SETTINGS = { top: 16, right: 16, width: 300, height: 360, collapsed: true };
+    const DEFAULT_SETTINGS = PokemonHelperStorage.DEFAULT_OVERLAY_SETTINGS;
     const MIN_WIDTH = 220;
     const MIN_HEIGHT = 180;
 
-    chrome.storage.local.get(STORAGE_KEY, (res) => {
-        const settings = Object.assign({}, DEFAULT_SETTINGS, res[STORAGE_KEY] || {});
+    // 'toggle' (ícone/atalho) fecha se já existir; 'ensure' (injeção automática
+    // ao carregar a página) nunca fecha o que já está aberto — só garante que
+    // exista, senão um F5 rápido pode disparar essa injeção mais de uma vez
+    // e derrubar um overlay recém-minimizado.
+    const mode = window.__pkmnHelperInjectMode || 'toggle';
+    delete window.__pkmnHelperInjectMode;
+
+    const existing = document.getElementById(ID);
+    if (existing) {
+        if (mode === 'ensure') return;
+        existing.remove();
+        const style = document.getElementById('pokemon-helper-style');
+        if (style) style.remove();
+        // fechado explicitamente: não deixa a injeção automática reabrir sozinha
+        persist(Object.assign({}, currentSettings(existing), { open: false }));
+        return;
+    }
+
+    // a leitura do storage é assíncrona, e o <div> só entra no DOM depois que
+    // ela resolve — se 'ensure' disparar mais de uma vez pra mesma navegação
+    // (tabs.onUpdated pode emitir 'complete' repetido), a checagem de
+    // `existing` acima não vê nada ainda em nenhuma das duas e cada uma monta
+    // seu próprio overlay duplicado. Essa flag síncrona reserva a construção
+    // antes do await, então a segunda chamada desiste na hora.
+    if (mode === 'ensure') {
+        if (window.__pkmnHelperEnsurePending) return;
+        window.__pkmnHelperEnsurePending = true;
+    }
+
+    PokemonHelperStorage.getOverlaySettings().then((storedSettings) => {
+        if (mode === 'ensure') window.__pkmnHelperEnsurePending = false;
+        const settings = Object.assign({}, DEFAULT_SETTINGS, storedSettings);
+        if (mode === 'ensure' && settings.open === false) return;
+        settings.open = true;
         build(settings);
+    }).catch((error) => {
+        if (mode === 'ensure') window.__pkmnHelperEnsurePending = false;
+        console.warn('[Pokemon Helper] Não foi possível carregar as configurações:', error);
+        build(Object.assign({}, DEFAULT_SETTINGS, { open: true }));
     });
 
     function build(settings) {
@@ -31,48 +58,18 @@
         bubble.textContent = '🧭';
         bubble.title = 'Abrir Pokemon Helper';
 
-        // ---- cabeçalho: ícones em linha (calc / encontro / config) + recolher ----
+        // ---- cabeçalho: ícones em linha (calc / encontro / meus pokémons / tabela / config) + recolher ----
+        // buildHeaderButtons vem de components/header-buttons.js
         const header = document.createElement('div');
         header.className = 'ph-header';
 
-        const calcBtn = document.createElement('button');
-        calcBtn.className = 'ph-icon-btn ph-view-btn pxl-icon-btn';
-        calcBtn.textContent = '🧮';
-        calcBtn.title = 'Calculadora';
-        calcBtn.dataset.view = 'calc';
-
-        const battleBtn = document.createElement('button');
-        battleBtn.className = 'ph-icon-btn ph-view-btn pxl-icon-btn';
-        battleBtn.textContent = '⚔️';
-        battleBtn.title = 'Encontro';
-        battleBtn.dataset.view = 'battle';
-
-        const myPokemonsBtn = document.createElement('button');
-        myPokemonsBtn.className = 'ph-icon-btn ph-view-btn';
-        myPokemonsBtn.textContent = '🖥️';
-        myPokemonsBtn.title = 'Meus Pokémons';
-        myPokemonsBtn.dataset.view = 'myPokemons';
-
-        const settingsBtn = document.createElement('button');
-        settingsBtn.className = 'ph-icon-btn ph-view-btn pxl-icon-btn';
-        settingsBtn.textContent = '⚙️';
-        settingsBtn.title = 'Configurações';
-        settingsBtn.dataset.view = 'settings';
-
-        const spacer = document.createElement('div');
-        spacer.className = 'ph-spacer';
-
-        const collapseBtn = document.createElement('button');
-        collapseBtn.className = 'ph-icon-btn pxl-icon-btn';
-        collapseBtn.textContent = '—';
-        collapseBtn.title = 'Recolher';
-
-        header.appendChild(calcBtn);
-        header.appendChild(battleBtn);
-        header.appendChild(myPokemonsBtn);
-        header.appendChild(settingsBtn);
-        header.appendChild(spacer);
-        header.appendChild(collapseBtn);
+        const collapseBtn = buildHeaderButtons(header, [
+            { icon: '🧮', title: 'Calculadora', view: 'calc' },
+            { icon: '📊', title: 'Tabela de tipos', view: 'chart' },
+            { icon: '⚔️', title: 'Encontro', view: 'battle' },
+            { icon: '🖥️', title: 'Meus Pokémons', view: 'myPokemons' },
+            { icon: '⚙️', title: 'Configurações', view: 'settings' },
+        ], { icon: '—', title: 'Recolher' });
 
         // ---- corpo ----
         const body = document.createElement('div');
@@ -93,11 +90,17 @@
         myPokemonsFrame.className = 'ph-frame';
         myPokemonsFrame.src = chrome.runtime.getURL('myPokemons.html');
 
+        const chartFrame = document.createElement('iframe');
+        chartFrame.id = 'pokemon-chart-frame';
+        chartFrame.className = 'ph-frame';
+        chartFrame.src = chrome.runtime.getURL('chart.html');
+
         const settingsPanel = buildSettingsPanel();
 
         body.appendChild(calcFrame);
         body.appendChild(battleFrame);
         body.appendChild(myPokemonsFrame);
+        body.appendChild(chartFrame);
         body.appendChild(settingsPanel);
 
         const RESIZE_DIRS = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
@@ -125,17 +128,24 @@
             const maxTop = Math.max(0, window.innerHeight - settings.height);
             const maxRight = Math.max(0, window.innerWidth - settings.width);
 
+            let rafScheduled = false;
             const onMove = (moveEvent) => {
                 const dx = moveEvent.clientX - startX;
                 const dy = moveEvent.clientY - startY;
                 settings.top = clampNum(startTop + dy, 0, maxTop, startTop);
                 settings.right = clampNum(startRight - dx, 0, maxRight, startRight);
-                applyBox(container, settings);
+                if (!rafScheduled) {
+                    rafScheduled = true;
+                    requestAnimationFrame(() => {
+                        rafScheduled = false;
+                        applyBox(container, settings);
+                    });
+                }
             };
             const onUp = () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup', onUp);
-                persist(settings);
+                persist(currentSettings(container));
             };
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup', onUp);
@@ -154,6 +164,7 @@
                 const startTop = settings.top;
                 const startRight = settings.right;
 
+                let rafScheduled = false;
                 const onMove = (moveEvent) => {
                     const dx = moveEvent.clientX - startX;
                     const dy = moveEvent.clientY - startY;
@@ -174,12 +185,18 @@
                         settings.height = newHeight;
                     }
 
-                    applyBox(container, settings);
+                    if (!rafScheduled) {
+                        rafScheduled = true;
+                        requestAnimationFrame(() => {
+                            rafScheduled = false;
+                            applyBox(container, settings);
+                        });
+                    }
                 };
                 const onUp = () => {
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup', onUp);
-                    persist(settings);
+                    persist(currentSettings(container));
                 };
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
@@ -187,7 +204,7 @@
         });
 
         setCollapsed(container, settings, settings.collapsed);
-        setActiveView('calc', container);
+        setActiveView(settings.view || 'calc', container);
 
         bubble.addEventListener('click', () => setCollapsed(container, settings, false));
         collapseBtn.addEventListener('click', () => setCollapsed(container, settings, true));
@@ -195,6 +212,7 @@
         header.addEventListener('click', (e) => {
             const btn = e.target.closest('.ph-view-btn');
             if (!btn) return;
+            delete container.dataset.preBattleView; // navegação manual cancela o retorno automático
             setActiveView(btn.dataset.view, container);
         });
 
@@ -212,23 +230,39 @@
                 if (!overlay) return;
 
                 const isCharacterPayload = !!(data.party || data.pc);
+                // sinal real de fim de luta: só usado aqui pra saber quando voltar
+                // pra aba anterior — battle.js ignora isso de propósito (ele só olha
+                // pra presença de `foe`), esse "over" não deve virar estado de tela lá.
                 const battleEnded = !!(data.state && data.state.over === true);
 
-                if (isCharacterPayload) {
-                    if (overlay.classList.contains('collapsed')) {
-                        setCollapsed(overlay, currentSettings(overlay), false);
+                if (isCharacterPayload && !battleEnded) {
+                    // só troca sozinho a partir da view ociosa (calc); assim não
+                    // atropela navegação manual pra outras abas (config, tabela...).
+                    if ((overlay.dataset.activeView || 'calc') === 'calc') {
+                        if (overlay.classList.contains('collapsed')) {
+                            setCollapsed(overlay, currentSettings(overlay), false);
+                        }
+                        setActiveView('myPokemons', overlay);
                     }
-                    setActiveView('myPokemons', overlay);
                     return;
                 }
 
-                // battleEnded checado primeiro de propósito: a resposta de fim de
-                // batalha (ex: fugir) também pode trazer um "foe.stats" completo
-                // junto (não é exclusivo do início de encontro), então o fim tem
-                // que ganhar prioridade sobre o foco quando os dois aparecem juntos.
                 if (battleEnded) {
-                    setActiveView('calc', overlay);
-                } else if (data.foe && data.foe.stats) {
+                    const returnView = overlay.dataset.preBattleView;
+                    if (returnView) {
+                        delete overlay.dataset.preBattleView;
+                        if (overlay.classList.contains('collapsed')) {
+                            setCollapsed(overlay, currentSettings(overlay), false);
+                        }
+                        setActiveView(returnView, overlay);
+                    }
+                    return;
+                }
+
+                if (data.foe) {
+                    if (overlay.dataset.activeView !== 'battle' && !overlay.dataset.preBattleView) {
+                        overlay.dataset.preBattleView = overlay.dataset.activeView || 'calc';
+                    }
                     if (overlay.classList.contains('collapsed')) {
                         setCollapsed(overlay, currentSettings(overlay), false);
                     }
@@ -326,6 +360,41 @@
             }
             #${ID} .ph-btn-shortcut { width: 100%; margin-bottom: 4px; }
             #${ID} .ph-hint { color: #9198ab; font-size: var(--pxl-fs-sm); margin: 4px 0 14px; }
+            #${ID} .ph-setting-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+            #${ID} .ph-setting-row[hidden] { display: none; }
+            #${ID} .ph-setting-label { line-height: 1.5; }
+            #${ID} .ph-toggle {
+                position: relative;
+                flex: 0 0 auto;
+                width: 42px;
+                height: 22px;
+                padding: 0;
+                border: 2px solid #000;
+                border-radius: 0;
+                background: #2e3240;
+                cursor: pointer;
+            }
+            #${ID} .ph-toggle::after {
+                content: '';
+                position: absolute;
+                top: 3px;
+                left: 3px;
+                width: 12px;
+                height: 12px;
+                background: #9198ab;
+                transition: transform 0.15s ease;
+            }
+            #${ID} .ph-toggle[aria-checked="true"] { background: #235c3c; }
+            #${ID} .ph-toggle[aria-checked="true"]::after {
+                background: #57c785;
+                transform: translateX(20px);
+            }
             #${ID} .ph-resize-handle {
                 position: absolute;
                 z-index: 10;
@@ -384,6 +453,16 @@
         panel.className = 'ph-settings';
         panel.id = 'pokemon-settings-panel';
         panel.innerHTML = `
+            <h3>Atualizações</h3>
+            <div class="ph-setting-row">
+                <span class="ph-setting-label" id="ph-update-notifications-label">Avisar sobre atualizações</span>
+                <button type="button" class="ph-toggle" id="ph-update-notifications" role="switch" aria-checked="false" aria-labelledby="ph-update-notifications-label"></button>
+            </div>
+            <div class="ph-setting-row" id="ph-beta-channel-row" hidden>
+                <span class="ph-setting-label" id="ph-beta-channel-label">Usar beta</span>
+                <button type="button" class="ph-toggle" id="ph-beta-channel" role="switch" aria-checked="false" aria-labelledby="ph-beta-channel-label"></button>
+            </div>
+            <p class="ph-hint">O padrão verifica a branch main. O beta verifica a branch develop.</p>
             <h3>Atalho de teclado</h3>
             <button type="button" class="ph-btn-shortcut pxl-btn pxl-btn-sm" id="ph-set-shortcut">Configurar atalho de abrir/fechar</button>
             <p class="ph-hint">Abre a página de atalhos do Chrome, onde dá pra definir a combinação de teclas que abre e fecha esta extensão em qualquer aba.</p>
@@ -391,6 +470,44 @@
 
         panel.querySelector('#ph-set-shortcut').addEventListener('click', () => {
             chrome.runtime.sendMessage({ type: 'pkmn-helper-open-shortcuts' });
+        });
+
+        const notificationsToggle = panel.querySelector('#ph-update-notifications');
+        const betaToggle = panel.querySelector('#ph-beta-channel');
+        const betaRow = panel.querySelector('#ph-beta-channel-row');
+
+        function setToggleState(toggle, enabled) {
+            toggle.setAttribute('aria-checked', String(enabled));
+        }
+
+        function applyUpdatePreferences(preferences) {
+            setToggleState(notificationsToggle, preferences.notificationsEnabled);
+            setToggleState(betaToggle, preferences.betaChannelEnabled);
+            betaRow.hidden = !preferences.notificationsEnabled;
+        }
+
+        PokemonHelperStorage.getUpdatePreferences()
+            .then(applyUpdatePreferences)
+            .catch((error) => console.warn('[Pokemon Helper] Não foi possível carregar preferências de atualização:', error));
+
+        notificationsToggle.addEventListener('click', () => {
+            const notificationsEnabled = notificationsToggle.getAttribute('aria-checked') !== 'true';
+            setToggleState(notificationsToggle, notificationsEnabled);
+            betaRow.hidden = !notificationsEnabled;
+            PokemonHelperStorage.setUpdatePreferences({ notificationsEnabled }).catch((error) => {
+                setToggleState(notificationsToggle, !notificationsEnabled);
+                betaRow.hidden = notificationsEnabled;
+                console.warn('[Pokemon Helper] Não foi possível salvar a preferência de atualização:', error);
+            });
+        });
+
+        betaToggle.addEventListener('click', () => {
+            const betaChannelEnabled = betaToggle.getAttribute('aria-checked') !== 'true';
+            setToggleState(betaToggle, betaChannelEnabled);
+            PokemonHelperStorage.setUpdatePreferences({ betaChannelEnabled }).catch((error) => {
+                setToggleState(betaToggle, !betaChannelEnabled);
+                console.warn('[Pokemon Helper] Não foi possível salvar a preferência do beta:', error);
+            });
         });
 
         return panel;
@@ -414,7 +531,7 @@
         settings.collapsed = collapsed;
         container.classList.toggle('collapsed', collapsed);
         if (!collapsed) applyBox(container, settings);
-        persist(settings);
+        persist(currentSettings(container));
     }
 
     function currentSettings(container) {
@@ -424,11 +541,15 @@
             width: parseInt(container.style.width, 10) || DEFAULT_SETTINGS.width,
             height: parseInt(container.style.height, 10) || DEFAULT_SETTINGS.height,
             collapsed: container.classList.contains('collapsed'),
+            view: container.dataset.activeView || DEFAULT_SETTINGS.view,
+            open: true,
         };
     }
 
     function persist(settings) {
-        chrome.storage.local.set({ [STORAGE_KEY]: settings });
+        PokemonHelperStorage.setOverlaySettings(settings).catch((error) => {
+            console.warn('[Pokemon Helper] Não foi possível salvar as configurações:', error);
+        });
     }
 
     // Busca os elementos por classe (em vez de usar closures) porque o layout
@@ -437,16 +558,21 @@
         const calc = container.querySelector('#pokemon-calc-frame');
         const battle = container.querySelector('#pokemon-battle-frame');
         const myPokemons = container.querySelector('#pokemon-myPokemons-frame');
+        const chart = container.querySelector('#pokemon-chart-frame');
         const settingsPanel = container.querySelector('#pokemon-settings-panel');
-        if (!calc || !battle || !myPokemons || !settingsPanel) return;
+        if (!calc || !battle || !myPokemons || !chart || !settingsPanel) return;
 
         calc.style.display = view === 'calc' ? 'block' : 'none';
         battle.style.display = view === 'battle' ? 'block' : 'none';
         myPokemons.style.display = view === 'myPokemons' ? 'block' : 'none';
+        chart.style.display = view === 'chart' ? 'block' : 'none';
         settingsPanel.style.display = view === 'settings' ? 'block' : 'none';
 
         container.querySelectorAll('.ph-view-btn').forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.view === view);
         });
+
+        container.dataset.activeView = view;
+        persist(currentSettings(container));
     }
 })();

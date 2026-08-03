@@ -22,18 +22,16 @@ const TYPE_MAPPER = {
     18: 'fairy'
 }
 
-const OUTCOME_LABELS = {
-    fled: 'Fugiu',
-    caught: 'Capturado',
-    captured: 'Capturado',
-    won: 'Vitória',
-    win: 'Vitória',
-    lost: 'Derrota',
-    lose: 'Derrota',
-};
-
 function row(label, value) {
     return `<div class="row"><span class="label">${label}</span><span class="value">${value}</span></div>`;
+}
+
+function ivLevel(iv) {
+    return iv <= 15 ? 'low' : iv <= 25 ? 'mid' : 'high';
+}
+
+function ivRow(label, iv, display) {
+    return `<div class="row"><span class="label">${label}</span><span class="value" data-level="${ivLevel(iv)}">${display}</span></div>`;
 }
 
 function hpGauge(hp, maxHp) {
@@ -47,28 +45,18 @@ function hpGauge(hp, maxHp) {
     `;
 }
 
-function renderBattleEnd(data, outcome) {
-    const content = document.getElementById('content');
-    const rewards = data.rewards || {};
-
-    let html = row('Resultado', OUTCOME_LABELS[outcome] || outcome || '-');
-    if (rewards.money) html += row('Dinheiro', rewards.money);
-    if (rewards.prize) html += row('Prêmio', rewards.prize);
-    if (rewards.badge) html += row('Emblema', rewards.badge);
-
-    content.innerHTML = html;
-}
+let lastFoe = null;
 
 function render(data) {
     const content = document.getElementById('content');
 
-    const isOver = !!(data.state && data.state.over === true);
-    if (isOver) {
-        renderBattleEnd(data, data.state.outcome);
-        return;
+    // respostas de turno (ex: atacar) nem sempre reenviam o objeto "foe"
+    // completo; quando vier parcial ou ausente, mantém/mescla com o último
+    // oponente conhecido em vez de esvaziar o painel.
+    if (data && data.foe) {
+        lastFoe = Object.assign({}, lastFoe, data.foe);
     }
-
-    const foe = data && data.foe;
+    const foe = lastFoe;
 
     if (!foe) {
         content.innerHTML = '<p class="empty">Encontro sem dados de oponente.</p>';
@@ -95,8 +83,8 @@ function render(data) {
     if (foe.shiny) html += row('Shiny', '<span class="pxl-badge pxl-badge-accent">★ sim</span>');
     html += hpGauge(foe.hp, foe.maxHp);
     html += row('Habilidade', foe.ability || '-');
-    html += row('Natureza', foe.nature || '-');
-    html += row('IVs (%)', `${Math.round(ivPercent * 100)}%`);
+    html += row('Natureza', natureEffectHTML(foe.nature));
+    html += ivRow('IVs (%)', ivPercent * 31, `${Math.round(ivPercent * 100)}%`);
     html += row('Item', foe.heldItem || '-');
 
     const typeNames = typeNamesFromIds(foe.types);
@@ -109,7 +97,7 @@ function render(data) {
 
     html += '<h2>IVs</h2>';
     STAT_KEYS.forEach((k) => {
-        if (ivs[k] !== undefined) html += row(k.toUpperCase(), `${ivs[k]}/31`);
+        if (ivs[k] !== undefined) html += ivRow(k.toUpperCase(), ivs[k], `${ivs[k]}/31`);
     });
 
     if (moves.length) {

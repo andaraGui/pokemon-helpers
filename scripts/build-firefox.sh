@@ -13,6 +13,8 @@ FILES=(
   background.js
   battle.html
   battle.js
+  chart.html
+  chart.js
   content.js
   index.html
   interceptor.js
@@ -26,6 +28,8 @@ for f in "${FILES[@]}"; do
 done
 
 cp "$ROOT/manifest.firefox.json" "$DIST/manifest.json"
+cp -r "$ROOT/icons" "$DIST/icons"
+cp -r "$ROOT/components" "$DIST/components"
 
 rm -f "$ZIP"
 (cd "$DIST" && zip -rq "$ZIP" .)
