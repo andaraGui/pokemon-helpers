@@ -6,7 +6,9 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         updatePreferences: 'pkmnHelperUpdatePreferences',
         updateStatus: 'pkmnHelperUpdateStatus',
         abilities: 'pkmnHelperAbilities',
-        pokedex: 'pkmnHelperPokedex'
+        pokedex: 'pkmnHelperPokedex',
+        trainerMoves: 'pkmnHelperTrainerMoves',
+        discoveredMoves: 'pkmnHelperDiscoveredMoves'
     });
 
     const DEFAULT_OVERLAY_SETTINGS = Object.freeze({
@@ -81,7 +83,11 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         getAbilities: () => read(KEYS.abilities, { items: [], checkedAt: null, error: null }),
         setAbilities: (value) => write(KEYS.abilities, value),
         getPokedex: () => read(KEYS.pokedex, { items: [], checkedAt: null, error: null }),
-        setPokedex: (value) => write(KEYS.pokedex, value)
+        setPokedex: (value) => write(KEYS.pokedex, value),
+        getTrainerMoves: () => read(KEYS.trainerMoves, { items: [], checkedAt: null, error: null }),
+        setTrainerMoves: (value) => write(KEYS.trainerMoves, value),
+        getDiscoveredMoves: () => read(KEYS.discoveredMoves, { items: [] }),
+        setDiscoveredMoves: (value) => write(KEYS.discoveredMoves, value)
     });
 })();
 

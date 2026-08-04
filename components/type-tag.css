@@ -32,13 +32,6 @@
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
 }
 
-/* ---- Grupo de tipo duplo (dual-type): duas cards lado a lado, agrupadas ---- */
-.type-tag-group {
-    display: inline-flex;
-    align-items: flex-start;
-    gap: 4px;
-}
-
 /* ---- Variante empilhada: ícone em cima, abreviação embaixo (tabela, chips, resultado) ---- */
 .type-tag.mini {
     flex-direction: column;
