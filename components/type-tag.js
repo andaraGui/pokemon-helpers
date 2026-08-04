@@ -40,22 +40,25 @@ function typeIconHTML(type, opts = {}) {
     return `<img class="type-icon-img" src="icons/types/${variant}${type}.png" alt=""${title}>`;
 }
 
-// ---- componente de tag: uma card sólida por tipo ----
-// tipos duplos (dual-type) viram duas cards lado a lado, agrupadas, em vez de
-// uma pill só espremendo os dois ícones com fundo cortado ao meio.
+// ---- componente de tag: uma única pill, sólida (1 tipo) ou com fundo em
+// gradiente meio a meio (2 tipos) — mesma estrutura/classes pros dois casos,
+// só muda o fundo e a quantidade de ícones/abreviações dentro.
 // opts.abbr troca o nome completo pela abreviação de 3 letras
-// opts.stack empilha ícone (em cima) + abreviação (embaixo), como na tabela de referência
+// opts.stack empilha ícone(s) (em cima) + abreviação (embaixo), como na tabela de referência
+// opts.title troca o tooltip padrão (nome do tipo) por um texto customizado
 function typeTagHTML(types, opts = {}) {
     if (!Array.isArray(types)) types = [types];
-    if (types.length === 2) {
-        return `<span class="type-tag-group">${types.map(t => typeTagHTML(t, opts)).join('')}</span>`;
-    }
-    const type = types[0];
     const stacked = !!opts.stack;
     const dict = (opts.abbr || stacked) ? ABBR : LABELS;
     const cls = `type-tag${stacked ? ' mini' : ''}`;
-    const label = stacked ? `<span class="abbr">${dict[type]}</span>` : dict[type];
-    return `<span class="${cls}" style="background:var(--t-${type})" title="${LABELS[type]}">` +
-        `<span class="icon">${typeIconHTML(type)}</span>${label}` +
+    const background = types.length === 2
+        ? `linear-gradient(135deg, var(--t-${types[0]}) 50%, var(--t-${types[1]}) 50%)`
+        : `var(--t-${types[0]})`;
+    const title = opts.title ?? types.map((type) => LABELS[type]).join(' / ');
+    const icons = types.map((type) => typeIconHTML(type)).join('');
+    const label = opts.label ?? types.map((type) => dict[type]).join(' / ');
+    const labelHtml = stacked ? `<span class="abbr">${label}</span>` : label;
+    return `<span class="${cls}" style="background:${background}" title="${title}">` +
+        `<span class="icon">${icons}</span>${labelHtml}` +
         `</span>`;
 }

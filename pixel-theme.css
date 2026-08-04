@@ -25,6 +25,26 @@
     --pxl-fs-base: 0.7rem;  /* controles interativos (botões, badges, inputs) */
     --pxl-fs-md: 0.8rem;    /* texto de destaque (título de página secundária) */
     --pxl-fs-lg: 0.95rem;   /* título principal (h1) */
+
+    /* cores de tipo — usadas pelo componente de tag/pill (components/type-tag.js) */
+    --t-normal: #A8A77A;
+    --t-fire: #EE8130;
+    --t-water: #6390F0;
+    --t-electric: #F7D02C;
+    --t-grass: #7AC74C;
+    --t-ice: #96D9D6;
+    --t-fighting: #C22E28;
+    --t-poison: #A33EA1;
+    --t-ground: #E2BF65;
+    --t-flying: #A98FF3;
+    --t-psychic: #F95587;
+    --t-bug: #A6B91A;
+    --t-rock: #B6A136;
+    --t-ghost: #735797;
+    --t-dragon: #6F35FC;
+    --t-dark: #705746;
+    --t-steel: #B7B7CE;
+    --t-fairy: #D685AD;
 }
 
 :where(.pxl-heading, .pxl-btn, .pxl-icon-btn, .pxl-badge, .pxl-toggle, .pxl-hp-label) {
