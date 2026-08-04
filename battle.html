@@ -119,8 +119,8 @@
         .fx-bad { color: #e2637a; background: rgba(226, 99, 122, 0.16); }
         .fx-immune { color: #58a6ff; background: rgba(88, 166, 255, 0.18); }
 
-        .move-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; }
-        .move-row { display: flex; align-items: stretch; gap: 8px; padding: 6px; border: 1px solid #2e3240; border-radius: 4px; background: #1b1e27; }
+        .move-rows { display: grid; grid-template-columns: auto 1fr; gap: 6px; margin-bottom: 6px; }
+        .move-row { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: stretch; gap: 8px; padding: 6px; border: 1px solid #2e3240; border-radius: 4px; background: #1b1e27; }
         .move-row > .type-tag.mini { justify-content: center; }
         .move-eff-table { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
         .move-eff-row { display: grid; grid-template-columns: auto 1fr; align-items: stretch; gap: 6px; }
