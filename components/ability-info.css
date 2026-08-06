@@ -1,0 +1,3 @@
+.ability-info { position: relative; color: #79b8ff; cursor: help; outline: none; }
+.ability-info::after { content: attr(data-tooltip); position: absolute; z-index: 20; right: 0; bottom: calc(100% + 7px); width: min(180px, 62vw); padding: 9px; border: 1px solid #596175; background: #20232d; color: #e8e9ee; font-size: 9px; line-height: 1.65; text-align: left; white-space: normal; overflow-wrap: anywhere; box-shadow: 3px 3px 0 #0b0c10; visibility: hidden; opacity: 0; pointer-events: none; }
+.ability-info:hover::after, .ability-info:focus::after { visibility: visible; opacity: 1; }

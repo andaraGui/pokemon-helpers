@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="pixel-theme.css">
     <link rel="stylesheet" href="components/nature-effect.css">
     <link rel="stylesheet" href="components/update-notice.css">
+    <link rel="stylesheet" href="components/ability-info.css">
+    <link rel="stylesheet" href="components/type-tag.css">
     <style>
         * {
             box-sizing: border-box;
@@ -78,6 +80,56 @@
             padding: 3px 0;
         }
 
+        .recommendation { padding: 8px; border: 1px solid #4c556c; background: #1b1e27; line-height: 1.5; }
+        .recommendation strong { color: #57c785; }
+        .stage { display: inline-block; min-width: 28px; padding: 2px 4px; text-align: center; }
+        .stage.up { color: #57c785; }
+        .stage.down { color: #e2637a; }
+        .ball-rate { color: #79b8ff; }
+        .stats-grid, .ivs-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; }
+        .iv-rating[data-rating="ruim"] { color: #e2637a; }
+        .iv-rating[data-rating="medio"] { color: #f7d02c; }
+        .iv-rating[data-rating="bom"] { color: #57c785; }
+        .iv-rating[data-rating="muito-bom"] { color: #58a6ff; }
+        .iv-rating[data-rating="excelente"] { color: #c084fc; }
+        .gotcha { padding: 12px; text-align: center; }
+        .gotcha-badge { display: inline-block; padding: 9px 14px; background: #57c785; color: #06210f; border: 2px solid #000; box-shadow: 3px 3px 0 #000; }
+        .gotcha p { margin: 10px 0 0; color: #e8e9ee; }
+
+        .matchup-toggle { display: flex; align-items: center; gap: 6px; font-size: var(--pxl-fs-sm); color: #c7cbda; margin: 4px 0 10px; cursor: pointer; }
+        .matchup-toggle input { accent-color: #58a6ff; }
+
+        .pxl-btn-block { display: block; width: 100%; text-align: center; }
+
+        .info-icon { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; border-radius: 50%; background: #3a3f52; color: #c7cbda; font-size: 9px; font-style: italic; font-weight: 700; font-family: Georgia, 'Times New Roman', serif; cursor: help; vertical-align: middle; }
+
+        .matchup-modal-backdrop { position: fixed; inset: 0; background: #14161c; z-index: 50; }
+        .matchup-modal { height: 100%; padding: 14px; overflow-y: auto; }
+        .matchup-modal-header { margin-bottom: 10px; }
+        .matchup-modal h3 { font-size: var(--pxl-fs-2xs); text-transform: uppercase; letter-spacing: 0.06em; color: #9198ab; margin: 12px 0 4px; }
+        .matchup-detail-list { border: 1px solid #2e3240; border-radius: 4px; padding: 6px; }
+        .matchup-value-group { margin-bottom: 8px; }
+        .matchup-value-group:last-child { margin-bottom: 0; }
+        .matchup-value-label { display: inline-block; font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: var(--pxl-fs-sm); margin-bottom: 4px; }
+        .matchup-value-types { display: flex; flex-wrap: wrap; gap: 4px; }
+
+        .fx-great { color: #eafff2; background: rgba(87, 199, 133, 0.35); }
+        .fx-good { color: #57c785; background: rgba(87, 199, 133, 0.16); }
+        .fx-neutral { color: #9198ab; }
+        .fx-bad { color: #e2637a; background: rgba(226, 99, 122, 0.16); }
+        .fx-immune { color: #58a6ff; background: rgba(88, 166, 255, 0.18); }
+
+        .move-rows { display: grid; grid-template-columns: auto 1fr; gap: 6px; margin-bottom: 6px; }
+        .move-row { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: stretch; gap: 8px; padding: 6px; border: 1px solid #2e3240; border-radius: 4px; background: #1b1e27; }
+        .move-row > .type-tag.mini { justify-content: center; }
+        .move-eff-table { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+        .move-eff-row { display: grid; grid-template-columns: auto 1fr; align-items: stretch; gap: 6px; }
+        .move-eff-value { display: flex; align-items: center; justify-content: center; font-weight: 700; padding: 0 6px; border-radius: 4px; font-size: 0.58rem; }
+        .move-eff-types { display: flex; flex-wrap: wrap; gap: 3px; }
+        .move-eff-types .type-tag.mini { padding: 1px 4px 3px; font-size: 0.58rem; border-radius: 4px; }
+        .move-eff-types .type-tag.mini .icon { font-size: 0.85em; }
+        .move-eff-empty { color: #6b7182; font-size: var(--pxl-fs-2xs); margin: 0; }
+
         .pxl-hp {
             padding: 6px 0 10px;
         }
@@ -92,6 +144,14 @@
     <script src="data/extension-storage.js"></script>
     <script src="components/update-notice.js"></script>
     <script src="components/nature-effect.js"></script>
+    <script src="components/ability-info.js"></script>
+    <script src="components/iv-evaluation.js"></script>
+    <script src="components/catch-rate.js"></script>
+    <script src="components/type-tag.js"></script>
+    <script src="components/type-chart-data.js"></script>
+    <script src="data/move-types.js"></script>
+    <script src="data/move-status.js"></script>
+    <script src="data/move-details.js"></script>
     <script src="battle.js"></script>
 </body>
 

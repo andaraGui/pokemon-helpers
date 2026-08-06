@@ -3,6 +3,9 @@
     const DEFAULT_SETTINGS = PokemonHelperStorage.DEFAULT_OVERLAY_SETTINGS;
     const MIN_WIDTH = 220;
     const MIN_HEIGHT = 180;
+    const BATTLE_RETURN_DELAY_MS = 4000;
+    const FLEE_RETURN_DELAY_MS = 1000;
+    let battleReturnTimer = null;
 
     // 'toggle' (ícone/atalho) fecha se já existir; 'ensure' (injeção automática
     // ao carregar a página) nunca fecha o que já está aberto — só garante que
@@ -63,7 +66,7 @@
         const header = document.createElement('div');
         header.className = 'ph-header';
 
-        const collapseBtn = buildHeaderButtons(header, [
+        const { collapseBtn, maximizeBtn } = buildHeaderButtons(header, [
             { icon: '🧮', title: 'Calculadora', view: 'calc' },
             { icon: '📊', title: 'Tabela de tipos', view: 'chart' },
             { icon: '⚔️', title: 'Encontro', view: 'battle' },
@@ -203,11 +206,38 @@
             });
         });
 
+        container.dataset.maximized = String(settings.maximized === true);
+        container.dataset.restoreWidth = String(settings.restoreWidth || '');
+        container.dataset.restoreRight = String(settings.restoreRight ?? '');
         setCollapsed(container, settings, settings.collapsed);
         setActiveView(settings.view || 'calc', container);
 
         bubble.addEventListener('click', () => setCollapsed(container, settings, false));
         collapseBtn.addEventListener('click', () => setCollapsed(container, settings, true));
+        maximizeBtn.textContent = settings.maximized ? '↙' : '↗';
+        maximizeBtn.title = settings.maximized ? 'Voltar ao tamanho anterior' : 'Maximizar para 90% da largura';
+        maximizeBtn.setAttribute('aria-label', maximizeBtn.title);
+        maximizeBtn.addEventListener('click', () => {
+            if (!settings.maximized) {
+                settings.restoreWidth = settings.width;
+                settings.restoreRight = settings.right;
+                settings.width = Math.round(window.innerWidth * 0.9);
+                settings.right = Math.round(window.innerWidth * 0.05);
+                settings.maximized = true;
+            } else {
+                settings.width = settings.restoreWidth || DEFAULT_SETTINGS.width;
+                settings.right = settings.restoreRight ?? DEFAULT_SETTINGS.right;
+                settings.maximized = false;
+            }
+            container.dataset.maximized = String(settings.maximized);
+            container.dataset.restoreWidth = String(settings.restoreWidth || '');
+            container.dataset.restoreRight = String(settings.restoreRight ?? '');
+            applyBox(container, settings);
+            maximizeBtn.textContent = settings.maximized ? '↙' : '↗';
+            maximizeBtn.title = settings.maximized ? 'Voltar ao tamanho anterior' : 'Maximizar para 90% da largura';
+            maximizeBtn.setAttribute('aria-label', maximizeBtn.title);
+            persist(currentSettings(container));
+        });
 
         header.addEventListener('click', (e) => {
             const btn = e.target.closest('.ph-view-btn');
@@ -234,6 +264,7 @@
                 // pra aba anterior — battle.js ignora isso de propósito (ele só olha
                 // pra presença de `foe`), esse "over" não deve virar estado de tela lá.
                 const battleEnded = !!(data.state && data.state.over === true);
+                const isBattlePayload = !!(data.foe || data.state?.foe?.mon || data.battleId);
 
                 if (isCharacterPayload && !battleEnded) {
                     // só troca sozinho a partir da view ociosa (calc); assim não
@@ -250,16 +281,28 @@
                 if (battleEnded) {
                     const returnView = overlay.dataset.preBattleView;
                     if (returnView) {
-                        delete overlay.dataset.preBattleView;
-                        if (overlay.classList.contains('collapsed')) {
-                            setCollapsed(overlay, currentSettings(overlay), false);
-                        }
-                        setActiveView(returnView, overlay);
+                        const fledSuccessfully = data.state?.outcome === 'fled'
+                            || (data.events || []).some((event) => event.t === 'flee' && event.ok === true);
+                        const returnDelay = fledSuccessfully ? FLEE_RETURN_DELAY_MS : BATTLE_RETURN_DELAY_MS;
+                        if (battleReturnTimer) clearTimeout(battleReturnTimer);
+                        battleReturnTimer = setTimeout(() => {
+                            battleReturnTimer = null;
+                            if (overlay.dataset.preBattleView !== returnView) return;
+                            delete overlay.dataset.preBattleView;
+                            if (overlay.classList.contains('collapsed')) {
+                                setCollapsed(overlay, currentSettings(overlay), false);
+                            }
+                            setActiveView(returnView, overlay);
+                        }, returnDelay);
                     }
                     return;
                 }
 
-                if (data.foe) {
+                if (isBattlePayload) {
+                    if (battleReturnTimer) {
+                        clearTimeout(battleReturnTimer);
+                        battleReturnTimer = null;
+                    }
                     if (overlay.dataset.activeView !== 'battle' && !overlay.dataset.preBattleView) {
                         overlay.dataset.preBattleView = overlay.dataset.activeView || 'calc';
                     }
@@ -540,6 +583,9 @@
             right: parseInt(container.style.right, 10) || DEFAULT_SETTINGS.right,
             width: parseInt(container.style.width, 10) || DEFAULT_SETTINGS.width,
             height: parseInt(container.style.height, 10) || DEFAULT_SETTINGS.height,
+            maximized: container.dataset.maximized === 'true',
+            restoreWidth: parseInt(container.dataset.restoreWidth, 10) || null,
+            restoreRight: container.dataset.restoreRight === '' ? null : parseInt(container.dataset.restoreRight, 10),
             collapsed: container.classList.contains('collapsed'),
             view: container.dataset.activeView || DEFAULT_SETTINGS.view,
             open: true,

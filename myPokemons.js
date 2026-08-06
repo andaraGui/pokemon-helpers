@@ -114,7 +114,7 @@ function createPokemonViewModel(pokemon, location) {
         natureName,
         natureKey: normalizeSearch(natureName),
         natureEffect: getNatureEffect(natureName),
-        ability: formatToText(pokemon.ability),
+        ability: pokemon.ability,
         heldItem: formatToText(pokemon.heldItem),
         hasItem: pokemon.heldItem !== null && pokemon.heldItem !== undefined && pokemon.heldItem !== '',
         shiny: pokemon.shiny === true,
@@ -302,6 +302,7 @@ function syncUiState() {
 }
 
 function renderIvDetails(viewModel) {
+    const evaluation = PokemonIvEvaluation.evaluate(viewModel.pokemon);
     return `
         <div class="pokemon-details-section">
             <h4>IVs</h4>
@@ -313,6 +314,10 @@ function renderIvDetails(viewModel) {
                     </div>
                 `).join('')}
             </div>
+        </div>
+        <div class="pokemon-details-section pokemon-iv-assessment">
+            <div class="pokemon-assessment-item"><span class="pokemon-assessment-label">${PokemonIvEvaluation.labelHTML()}</span><strong>${PokemonIvEvaluation.html(viewModel.pokemon)}</strong></div>
+            <div class="pokemon-assessment-item"><span class="pokemon-assessment-label">Ataque (tipo principal)</span><strong>${evaluation.role}</strong></div>
         </div>
     `;
 }
@@ -347,7 +352,7 @@ function renderPokemonCard(viewModel) {
             <div class="pokemon-card-body">
                 <div class="pokemon-info-row">
                     <div class="pokemon-info"><span class="pokemon-label">Natureza</span><span class="pokemon-value pokemon-nature-value">${natureEffectHTML(escapeHtml(viewModel.natureName))}</span></div>
-                    <div class="pokemon-info"><span class="pokemon-label">Habilidade</span><span class="pokemon-value">${escapeHtml(viewModel.ability)}</span></div>
+                    <div class="pokemon-info"><span class="pokemon-label">Habilidade</span><span class="pokemon-value" data-ability="${escapeHtml(viewModel.ability)}">${escapeHtml(PokemonAbilityInfo.label(viewModel.ability))}</span></div>
                     <div class="pokemon-info pokemon-info--ivs"><span class="pokemon-label">IVs</span><span class="pokemon-value">${viewModel.ivPercent}%</span></div>
                 </div>
             </div>
@@ -436,6 +441,7 @@ function render() {
     syncUiState();
     const removeGroups = FILTER_STATE.advancedEnabled && FILTER_STATE.applied.removeGroups;
     content.innerHTML = removeGroups ? renderFlat() : renderGrouped();
+    PokemonAbilityInfo.hydrate(content);
     syncGlobalControls();
 }
 
