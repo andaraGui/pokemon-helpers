@@ -164,7 +164,7 @@ Mostrada assim que há um oponente capturado numa batalha.
 - Resultado agrupado por multiplicador (4×, 2×, 1×, ½×, ¼×, 0×), com cores
   invertidas no modo Defesa (verde = bom para quem defende).
 
-![Aba Calculadora com tipos selecionados](docs/images/aba-calculadora.png)
+![Aba Calculadora com um tipo selecionado](docs/images/aba-calculadora.png)
 
 ### Tabela de tipos
 
@@ -272,7 +272,7 @@ Encontro:
 - **Restaurar tudo** — pede confirmação e devolve todas as configurações
   (painel, comportamento, telas, atalhos) aos padrões de fábrica.
 
-![Tela de Configurações com os cinco blocos](docs/images/tela-configuracoes.png)
+![Tela de Configurações da extensão](docs/images/tela-configuracoes.png)
 
 ![Modo full com a tabela de tipos ao lado do conteúdo](docs/images/modo-full.png)
 

@@ -104,7 +104,11 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
                 });
             } catch (error) {
                 // contexto invalidado entre a checagem e a chamada
-                resolve(invalidContextFallback(Object.assign({}, defaults)));
+                if (/context invalidated/i.test(error?.message)) {
+                    resolve(invalidContextFallback(Object.assign({}, defaults)));
+                    return;
+                }
+                reject(error);
             }
         });
     }
@@ -122,7 +126,11 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
                     resolve(value);
                 });
             } catch (error) {
-                resolve(invalidContextFallback(value));
+                if (/context invalidated/i.test(error?.message)) {
+                    resolve(invalidContextFallback(value));
+                    return;
+                }
+                reject(error);
             }
         });
     }
