@@ -37,8 +37,12 @@
         window.__pkmnHelperEnsurePending = true;
     }
 
-    PokemonHelperStorage.getOverlaySettings().then((storedSettings) => {
+    Promise.all([
+        PokemonHelperStorage.getOverlaySettings(),
+        PokemonHelperStorage.getUiPreferences()
+    ]).then(([storedSettings, prefs]) => {
         if (mode === 'ensure') window.__pkmnHelperEnsurePending = false;
+        window.__pkmnHelperUiPrefs = prefs;
         const settings = Object.assign({}, DEFAULT_SETTINGS, storedSettings);
         if (mode === 'ensure' && settings.open === false) return;
         settings.open = true;
@@ -46,8 +50,25 @@
     }).catch((error) => {
         if (mode === 'ensure') window.__pkmnHelperEnsurePending = false;
         console.warn('[Pokemon Helper] Não foi possível carregar as configurações:', error);
+        window.__pkmnHelperUiPrefs = window.__pkmnHelperUiPrefs || PokemonHelperStorage.DEFAULT_UI_PREFERENCES;
         build(Object.assign({}, DEFAULT_SETTINGS, { open: true }));
     });
+
+    function uiPrefs() {
+        return window.__pkmnHelperUiPrefs || PokemonHelperStorage.DEFAULT_UI_PREFERENCES;
+    }
+
+    if (!window.__pkmnHelperPrefsListenerAdded) {
+        window.__pkmnHelperPrefsListenerAdded = true;
+        chrome.storage.onChanged.addListener((changes, area) => {
+            if (area !== 'local' || !changes[PokemonHelperStorage.KEYS.uiPreferences]) return;
+            PokemonHelperStorage.getUiPreferences().then((prefs) => {
+                window.__pkmnHelperUiPrefs = prefs;
+                const container = document.getElementById(ID);
+                if (container) refreshShortcutLabels(container);
+            });
+        });
+    }
 
     function build(settings) {
         injectStyle();
@@ -73,12 +94,14 @@
         const header = document.createElement('div');
         header.className = 'ph-header';
 
+        const fmt = PokemonHelperShortcutUtils.formatCombo;
+        const shortcuts = uiPrefs().shortcuts;
         const { collapseBtn, maximizeBtn } = buildHeaderButtons(header, [
-            { icon: 'enc', tip: 'Encontro atual — tecla E', view: 'battle' },
-            { icon: 'calc', tip: 'Calculadora de tipos — tecla C', view: 'calc' },
-            { icon: 'team', tip: 'Meus Pokémon — tecla M', view: 'myPokemons' },
-            { icon: 'cfg', tip: 'Configurações — vírgula', view: 'settings' },
-        ], { tip: 'Minimizar — Esc' });
+            { icon: 'enc', tip: `Encontro atual — tecla ${fmt(shortcuts.battle)}`, view: 'battle' },
+            { icon: 'calc', tip: `Calculadora de tipos — tecla ${fmt(shortcuts.calc)}`, view: 'calc' },
+            { icon: 'team', tip: `Meus Pokémon — tecla ${fmt(shortcuts.myPokemons)}`, view: 'myPokemons' },
+            { icon: 'cfg', tip: `Configurações — tecla ${fmt(shortcuts.settings)}`, view: 'settings' },
+        ], { tip: `Minimizar — ${fmt(shortcuts.minimize)}` }, { tip: `Expandir — ${fmt(shortcuts.toggleFull)}` });
 
         // ---- corpo ----
         const body = document.createElement('div');
@@ -285,22 +308,23 @@
             setActiveView(btn.dataset.view, container);
         });
 
-        const SHORTCUT_VIEWS = { e: 'battle', c: 'calc', m: 'myPokemons', ',': 'settings' };
         // a tabela 18×18 só aparece no modo expandido, ao lado das views de
         // conteúdo (syncFullSide) — estas são as views que a exibem
         const CHART_HOST_VIEWS = ['calc', 'battle'];
-        function handleShortcut(key) {
+        const VIEW_ACTIONS = { battle: 'battle', calc: 'calc', myPokemons: 'myPokemons', settings: 'settings' };
+
+        function performAction(action) {
             const container = document.getElementById(ID);
             if (!container || container.classList.contains('collapsed')) return;
             const settings = currentSettings(container);
-            if (SHORTCUT_VIEWS[key]) {
+            if (VIEW_ACTIONS[action]) {
                 delete container.dataset.preBattleView;
-                setActiveView(SHORTCUT_VIEWS[key], container);
-            } else if (key === 'f') {
+                setActiveView(VIEW_ACTIONS[action], container);
+            } else if (action === 'toggleFull') {
                 container.querySelector('.ph-maximize-btn')?.click();
-            } else if (key === 't') {
+            } else if (action === 'typeChart') {
                 // atalho dedicado da tabela de tipos: de qualquer tela, expande
-                // o painel já com a tabela à mostra; T de novo volta ao encaixado
+                // o painel já com a tabela à mostra; de novo, volta ao encaixado
                 const view = container.dataset.activeView || 'calc';
                 if (settings.maximized && CHART_HOST_VIEWS.includes(view)) {
                     container.querySelector('.ph-maximize-btn')?.click();
@@ -309,16 +333,25 @@
                     if (!CHART_HOST_VIEWS.includes(view)) setActiveView('calc', container);
                     if (!settings.maximized) container.querySelector('.ph-maximize-btn')?.click();
                 }
-            } else if (key === 'escape') {
+            } else if (action === 'minimize') {
                 if (settings.maximized) container.querySelector('.ph-maximize-btn')?.click();
                 else setCollapsed(container, settings, true);
             }
         }
+
+        // evtLike: KeyboardEvent ou o objeto serializado do shortcut-forwarder
+        function handleShortcut(evtLike) {
+            const combo = PokemonHelperShortcutUtils.comboFromEvent(evtLike);
+            if (!combo) return;
+            const shortcuts = uiPrefs().shortcuts;
+            const action = Object.keys(shortcuts).find((name) => shortcuts[name] === combo);
+            if (action) performAction(action);
+        }
         // atalhos só valem com o evento no painel (nunca no documento do jogo —
         // o jogo usa essas teclas pra gameplay)
         container.addEventListener('keydown', (event) => {
-            if (/INPUT|TEXTAREA/.test(event.target.tagName)) return;
-            handleShortcut(event.key.toLowerCase());
+            if (/INPUT|TEXTAREA|SELECT/.test(event.target.tagName)) return;
+            handleShortcut(event);
         });
         // registrado uma única vez em `window` (persiste entre toggles da
         // extensão, ao contrário do `container`, que é recriado do zero a cada
@@ -330,7 +363,7 @@
             window.addEventListener('message', (event) => {
                 const data = event.data;
                 if (!data || typeof data !== 'object') return;
-                if (data.type === 'panel-shortcut') handleShortcut(String(data.key).toLowerCase());
+                if (data.type === 'panel-shortcut') handleShortcut(data);
                 if (data.type === 'panel-exit-full') {
                     const overlay = document.getElementById(ID);
                     const settings = overlay && currentSettings(overlay);
@@ -715,7 +748,29 @@
         const text = container.querySelector('.ph-status-text');
         if (!text) return;
         const mode = settings.maximized ? 'EXPANDIDO' : `ENCAIXADO ${settings.width}PX`;
-        text.textContent = `${dataSeen ? 'CONECTADO' : 'AGUARDANDO DADOS'} · ${mode} · F=EXPANDIR  ESC=MINIMIZAR`;
+        const fmt = PokemonHelperShortcutUtils.formatCombo;
+        const shortcuts = uiPrefs().shortcuts;
+        text.textContent = `${dataSeen ? 'CONECTADO' : 'AGUARDANDO DADOS'} · ${mode} · ${fmt(shortcuts.toggleFull)}=EXPANDIR  ${fmt(shortcuts.minimize)}=MINIMIZAR`;
+    }
+
+    // reaplica os textos que citam teclas — chamado quando os atalhos mudam
+    function refreshShortcutLabels(container) {
+        const fmt = PokemonHelperShortcutUtils.formatCombo;
+        const shortcuts = uiPrefs().shortcuts;
+        const tips = {
+            battle: `Encontro atual — tecla ${fmt(shortcuts.battle)}`,
+            calc: `Calculadora de tipos — tecla ${fmt(shortcuts.calc)}`,
+            myPokemons: `Meus Pokémon — tecla ${fmt(shortcuts.myPokemons)}`,
+            settings: `Configurações — tecla ${fmt(shortcuts.settings)}`
+        };
+        container.querySelectorAll('.ph-view-btn').forEach((btn) => {
+            if (tips[btn.dataset.view]) btn.dataset.tip = tips[btn.dataset.view];
+        });
+        const maximizeBtn = container.querySelector('.ph-maximize-btn');
+        if (maximizeBtn) maximizeBtn.dataset.tip = `Expandir — ${fmt(shortcuts.toggleFull)}`;
+        const collapseBtn = container.querySelector('.ph-collapse-btn');
+        if (collapseBtn) collapseBtn.dataset.tip = `Minimizar — ${fmt(shortcuts.minimize)}`;
+        updateStatus(container, currentSettings(container));
     }
 
     function syncFullSide(container, settings) {
