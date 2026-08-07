@@ -20,6 +20,8 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         maximized: false,
         restoreWidth: null,
         restoreRight: null,
+        restoreTop: null,
+        restoreHeight: null,
         collapsed: true,
         view: 'calc',
         open: true

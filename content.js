@@ -236,6 +236,8 @@
         container.dataset.maximized = String(settings.maximized === true);
         container.dataset.restoreWidth = String(settings.restoreWidth || '');
         container.dataset.restoreRight = String(settings.restoreRight ?? '');
+        container.dataset.restoreTop = String(settings.restoreTop ?? '');
+        container.dataset.restoreHeight = String(settings.restoreHeight || '');
         setCollapsed(container, settings, settings.collapsed);
         setActiveView(settings.view || 'calc', container);
 
@@ -246,17 +248,29 @@
             if (!settings.maximized) {
                 settings.restoreWidth = settings.width;
                 settings.restoreRight = settings.right;
+                settings.restoreTop = settings.top;
+                settings.restoreHeight = settings.height;
+                // expande nas DUAS dimensões — o modo full ocupa ~90% da
+                // viewport inteira, não só da largura (senão a tabela 18×18
+                // fica espremida numa faixa baixa e os controles do topo
+                // somem do viewport ao rolar)
                 settings.width = Math.round(window.innerWidth * 0.9);
                 settings.right = Math.round(window.innerWidth * 0.05);
+                settings.top = Math.round(window.innerHeight * 0.05);
+                settings.height = Math.round(window.innerHeight * 0.9);
                 settings.maximized = true;
             } else {
                 settings.width = settings.restoreWidth || DEFAULT_SETTINGS.width;
                 settings.right = settings.restoreRight ?? DEFAULT_SETTINGS.right;
+                settings.top = settings.restoreTop ?? DEFAULT_SETTINGS.top;
+                settings.height = settings.restoreHeight || DEFAULT_SETTINGS.height;
                 settings.maximized = false;
             }
             container.dataset.maximized = String(settings.maximized);
             container.dataset.restoreWidth = String(settings.restoreWidth || '');
             container.dataset.restoreRight = String(settings.restoreRight ?? '');
+            container.dataset.restoreTop = String(settings.restoreTop ?? '');
+            container.dataset.restoreHeight = String(settings.restoreHeight || '');
             applyBox(container, settings);
             maximizeBtn.setAttribute('aria-label', settings.maximized ? 'Voltar ao tamanho anterior' : 'Maximizar para 90% da largura');
             persist(currentSettings(container));
@@ -731,6 +745,8 @@
             maximized: container.dataset.maximized === 'true',
             restoreWidth: parseInt(container.dataset.restoreWidth, 10) || null,
             restoreRight: container.dataset.restoreRight === '' ? null : parseInt(container.dataset.restoreRight, 10),
+            restoreTop: container.dataset.restoreTop === '' ? null : parseInt(container.dataset.restoreTop, 10),
+            restoreHeight: parseInt(container.dataset.restoreHeight, 10) || null,
             collapsed: container.classList.contains('collapsed'),
             view: container.dataset.activeView || DEFAULT_SETTINGS.view,
             open: true,

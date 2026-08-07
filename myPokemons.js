@@ -24,7 +24,11 @@ const UI_STATE = {
     initialized: false,
     // ligado/desligado pela mensagem 'panel-mode' do shell (modo full) —
     // nunca persistido: some assim que o iframe volta ao modo encaixado.
-    forceExpandAll: false
+    forceExpandAll: false,
+    // no modo full os detalhes começam todos abertos, mas o usuário pode
+    // recolher card a card — os recolhidos vivem aqui, fora do Set
+    // persistido (expandedPokemon), e zeram a cada entrada no modo full.
+    fullCollapsed: new Set()
 };
 
 let filterController = null;
@@ -368,7 +372,9 @@ function renderMoveDetails(viewModel) {
 }
 
 function renderPokemonCard(viewModel) {
-    const expanded = UI_STATE.forceExpandAll || UI_STATE.expandedPokemon.has(viewModel.key);
+    const expanded = UI_STATE.forceExpandAll
+        ? !UI_STATE.fullCollapsed.has(viewModel.key)
+        : UI_STATE.expandedPokemon.has(viewModel.key);
     const detailsId = `pokemon-details-${viewModel.key.replace(/:/g, '-')}`;
     const icon = viewModel.iconUrl
         ? `<img class="pokemon-icon" src="${viewModel.iconUrl}" alt="${escapeHtml(viewModel.name)} icon">`
@@ -465,7 +471,8 @@ function syncGlobalControls() {
     const groupKeys = DATA_STATE.groups.map((group) => group.key);
     const allGroupsExpanded = groupKeys.length > 0 && groupKeys.every((key) => UI_STATE.expandedGroups.has(key));
     const allPokemonExpanded = UI_STATE.forceExpandAll
-        || (visibleKeys.length > 0 && visibleKeys.every((key) => UI_STATE.expandedPokemon.has(key)));
+        ? visibleKeys.length > 0 && visibleKeys.every((key) => !UI_STATE.fullCollapsed.has(key))
+        : visibleKeys.length > 0 && visibleKeys.every((key) => UI_STATE.expandedPokemon.has(key));
     const removeGroups = FILTER_STATE.advancedEnabled && FILTER_STATE.applied.removeGroups;
     const groupsToggle = document.getElementById('expand-all-groups');
     groupsToggle?.setAttribute('aria-pressed', String(allGroupsExpanded));
@@ -542,8 +549,16 @@ function bindControls() {
     pokemonToggle.addEventListener('click', () => {
         const shouldExpand = pokemonToggle.getAttribute('aria-pressed') !== 'true';
         DATA_STATE.filteredPokemon.forEach((viewModel) => {
-            if (shouldExpand) UI_STATE.expandedPokemon.add(viewModel.key);
-            else UI_STATE.expandedPokemon.delete(viewModel.key);
+            // no modo full o estado session-only é o de RECOLHIDOS —
+            // o Set persistido não deve ser tocado por ações do modo full
+            if (UI_STATE.forceExpandAll) {
+                if (shouldExpand) UI_STATE.fullCollapsed.delete(viewModel.key);
+                else UI_STATE.fullCollapsed.add(viewModel.key);
+            } else if (shouldExpand) {
+                UI_STATE.expandedPokemon.add(viewModel.key);
+            } else {
+                UI_STATE.expandedPokemon.delete(viewModel.key);
+            }
         });
         render();
     });
@@ -558,13 +573,13 @@ function bindControls() {
         }
         const pokemonButton = event.target.closest('.pokemon-card-toggle');
         if (pokemonButton) {
-            // no modo full o estado exibido já é forçado (OR'd em
-            // renderPokemonCard) — clicar aqui não deve gravar nada no Set,
-            // senão o card fica "marcado" como expandido depois que o modo
-            // full termina, mesmo sem o usuário ter pedido isso.
-            if (UI_STATE.forceExpandAll) return;
             const card = pokemonButton.closest('[data-pokemon-key]');
-            if (card) toggleSetValue(UI_STATE.expandedPokemon, card.dataset.pokemonKey);
+            if (!card) return;
+            // no modo full o clique recolhe/reabre só na sessão (fullCollapsed);
+            // o Set persistido (expandedPokemon) fica intocado, senão o card
+            // ficaria "marcado" como expandido depois que o modo full termina,
+            // mesmo sem o usuário ter pedido isso.
+            toggleSetValue(UI_STATE.forceExpandAll ? UI_STATE.fullCollapsed : UI_STATE.expandedPokemon, card.dataset.pokemonKey);
             render();
         }
     });
@@ -582,12 +597,15 @@ window.addEventListener('message', (event) => {
     applyAndRender();
 });
 
-// modo full do painel (shell) — força todos os detalhes de Pokémon abertos
-// enquanto o iframe estiver maximizado; grupos continuam manuais.
+// modo full do painel (shell) — detalhes de Pokémon começam todos abertos,
+// mas podem ser recolhidos card a card (fullCollapsed); grupos continuam
+// manuais. Cada entrada no modo full zera os recolhidos da sessão anterior.
 window.addEventListener('message', (event) => {
     if (event.data?.type !== 'panel-mode') return;
-    document.body.classList.toggle('full', event.data.full === true);
-    UI_STATE.forceExpandAll = event.data.full === true;
+    const full = event.data.full === true;
+    document.body.classList.toggle('full', full);
+    if (full !== UI_STATE.forceExpandAll) UI_STATE.fullCollapsed.clear();
+    UI_STATE.forceExpandAll = full;
     render();
 });
 
