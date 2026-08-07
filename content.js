@@ -330,22 +330,30 @@
         const CHART_HOST_VIEWS = ['calc', 'battle'];
         const VIEW_ACTIONS = { battle: 'battle', calc: 'calc', myPokemons: 'myPokemons', settings: 'settings' };
 
+        // retorna true quando de fato executou algo, false quando não fez nada
+        // (ex.: painel colapsado ignora toggleFull/minimize) — quem consome a
+        // tecla no listener global usa esse retorno pra saber se deve mesmo
+        // impedir que o jogo a receba
         function performAction(action) {
             const container = document.getElementById(ID);
-            if (!container) return;
+            if (!container) return false;
             if (container.classList.contains('collapsed')) {
                 // da bolha, atalho de view expande e abre a aba;
                 // toggleFull/minimize não fazem sentido colapsado
-                if (!VIEW_ACTIONS[action] && action !== 'typeChart') return;
+                if (!VIEW_ACTIONS[action] && action !== 'typeChart') return false;
                 setCollapsed(container, currentSettings(container), false);
             }
             const settings = currentSettings(container);
             if (VIEW_ACTIONS[action]) {
                 delete container.dataset.preBattleView;
                 setActiveView(VIEW_ACTIONS[action], container);
-            } else if (action === 'toggleFull') {
+                return true;
+            }
+            if (action === 'toggleFull') {
                 container.querySelector('.ph-maximize-btn')?.click();
-            } else if (action === 'typeChart') {
+                return true;
+            }
+            if (action === 'typeChart') {
                 // atalho dedicado da tabela de tipos: de qualquer tela, expande
                 // o painel já com a tabela à mostra; de novo, volta ao encaixado
                 const view = container.dataset.activeView || 'calc';
@@ -356,18 +364,27 @@
                     if (!CHART_HOST_VIEWS.includes(view)) setActiveView('calc', container);
                     if (!settings.maximized) container.querySelector('.ph-maximize-btn')?.click();
                 }
-            } else if (action === 'minimize') {
+                return true;
+            }
+            if (action === 'minimize') {
                 if (settings.maximized) container.querySelector('.ph-maximize-btn')?.click();
                 else setCollapsed(container, settings, true);
+                return true;
             }
+            return false;
+        }
+
+        // combo do evento → nome da ação configurada (ou null)
+        function actionForCombo(evtLike) {
+            const combo = PokemonHelperShortcutUtils.comboFromEvent(evtLike);
+            if (!combo) return null;
+            const shortcuts = uiPrefs().shortcuts;
+            return Object.keys(shortcuts).find((name) => shortcuts[name] === combo) || null;
         }
 
         // evtLike: KeyboardEvent ou o objeto serializado do shortcut-forwarder
         function handleShortcut(evtLike) {
-            const combo = PokemonHelperShortcutUtils.comboFromEvent(evtLike);
-            if (!combo) return;
-            const shortcuts = uiPrefs().shortcuts;
-            const action = Object.keys(shortcuts).find((name) => shortcuts[name] === combo);
+            const action = actionForCombo(evtLike);
             if (action) performAction(action);
         }
         // registrado uma única vez em `window` (persiste entre toggles da
@@ -406,6 +423,9 @@
         if (!window.__pkmnHelperGlobalShortcutAdded) {
             window.__pkmnHelperGlobalShortcutAdded = true;
             document.addEventListener('keydown', (event) => {
+                // segurar a tecla não pode reexecutar a ação ~30x/s nem floodar
+                // o chrome.storage com gravações via persist()
+                if (event.repeat) return;
                 const target = event.target;
                 if (target instanceof Element) {
                     // campos de texto (chat do jogo, inputs do painel) ficam imunes
@@ -421,14 +441,15 @@
                 // DEPOIS deste listener — consumir aqui impediria gravar uma
                 // tecla que já é atalho de outra ação
                 if (overlay.querySelector('.ph-key-btn.capturing')) return;
-                const combo = PokemonHelperShortcutUtils.comboFromEvent(event);
-                if (!combo) return;
-                const shortcuts = uiPrefs().shortcuts;
-                const action = Object.keys(shortcuts).find((name) => shortcuts[name] === combo);
+                const action = actionForCombo(event);
                 if (!action) return;
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                performAction(action);
+                // só consome a tecla quando a ação de fato aconteceu — senão
+                // atalhos como ESC/F com o painel colapsado (onde não fazem
+                // nada) viram teclas mortas pro jogo à toa
+                if (performAction(action)) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
             }, true);
         }
 

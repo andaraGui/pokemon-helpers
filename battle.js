@@ -270,7 +270,7 @@ function resolveFoeMoves(foe) {
     push(movesWithTypes(discovered), 'discovered');
     if (state.kind === 'trainer') push(movesWithTypes(trainerMovesFor(foe) || []), 'trainer');
     push(probableMoves(foe), 'heuristic');
-    return { moves: merged, seenCount: discovered.length };
+    return { moves: merged, seenCount: merged.filter((move) => move.source === 'discovered').length };
 }
 
 const MOVE_SOURCE_LABELS = {
