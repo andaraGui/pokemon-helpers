@@ -457,6 +457,12 @@ function renderCollapsibleGroup(group, viewModels, total) {
 }
 
 function renderGrouped() {
+    // primeira execução: antes do primeiro sync do personagem não existe nem
+    // o grupo do time (groups[0]), e render() pode rodar antes disso via
+    // 'panel-mode' do shell ou interação com busca/filtros
+    if (DATA_STATE.groups.length === 0) {
+        return '<p class="empty">Aguardando dados do jogo — eles chegam quando o personagem sincroniza.</p>';
+    }
     const sourceByGroup = new Map(DATA_STATE.groups.map((group) => [group.key, []]));
     const filteredByGroup = new Map(DATA_STATE.groups.map((group) => [group.key, []]));
     DATA_STATE.sourcePokemon.forEach((viewModel) => sourceByGroup.get(viewModel.groupKey)?.push(viewModel));
