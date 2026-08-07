@@ -21,7 +21,10 @@ const UI_STATE = {
     expandedGroups: new Set(),
     expandedPokemon: new Set(),
     knownGroups: new Set(),
-    initialized: false
+    initialized: false,
+    // ligado/desligado pela mensagem 'panel-mode' do shell (modo full) —
+    // nunca persistido: some assim que o iframe volta ao modo encaixado.
+    forceExpandAll: false
 };
 
 let filterController = null;
@@ -41,10 +44,6 @@ function calculateIvPercent(ivs) {
         return sum + Math.min(Math.max(value, 0), 31);
     }, 0);
     return Math.round((total / (31 * STAT_KEYS.length)) * 100);
-}
-
-function ivLevel(iv) {
-    return iv <= 15 ? 'low' : iv <= 25 ? 'mid' : 'high';
 }
 
 function formatToText(value) {
@@ -84,7 +83,8 @@ function normalizeMoves(moves) {
     return moves.filter(Boolean).map((move) => ({
         name: move.name || 'Desconhecido',
         typeKey: TYPE_MAPPER[move.type] || null,
-        category: formatToText(move.category)
+        category: formatToText(move.category),
+        pp: move.pp
     }));
 }
 
@@ -274,15 +274,38 @@ function applyFilters() {
         .sort(createComparator(values));
 }
 
-function formatTypeIcons(typeKeys) {
-    if (!typeKeys.length) return '—';
-    return typeKeys.map((type) => typeIconHTML(type, { colored: true, title: true })).join(' ');
+// ---------------------------------------------------------------------
+// Render — cartões e grupos no design system v2 (pixel).
+// ---------------------------------------------------------------------
+
+// mesmas faixas usadas no encontro (battle.js): >=26 verde, >=15 âmbar
+const ivStatColor = (iv) => iv >= 26 ? 'var(--px-good)' : iv >= 15 ? 'var(--px-mid)' : 'var(--px-bad)';
+// faixa do IV total (%): >=80 verde, >=50 âmbar
+const ivPercentColor = (percent) => percent >= 80 ? 'var(--px-good)' : percent >= 50 ? 'var(--px-mid)' : 'var(--px-bad)';
+
+const MOVE_CATEGORY_STYLE = {
+    physical: { label: 'FÍS', color: '#e0803c' },
+    special: { label: 'ESP', color: '#4a90e2' },
+    status: { label: 'STA', color: '#8a8aa0' }
+};
+
+function moveCategoryInfo(category) {
+    const key = String(category ?? '').trim().toLowerCase();
+    return MOVE_CATEGORY_STYLE[key] || { label: '—', color: 'var(--px-text-dim)' };
 }
 
-function formatMoveType(typeKey) {
-    return typeKey
-        ? `<span class="pokemon-move-type">${typeIconHTML(typeKey, { colored: true, title: true })}</span>`
-        : '<span class="pokemon-move-type move-type-missing">—</span>';
+function ivTooltipText(ivs) {
+    return STAT_KEYS.map((stat) => `${stat.toUpperCase()} ${ivs[stat]}`).join(' · ');
+}
+
+// chips de +/- da nature (verde/vermelho), a partir de getNatureEffect
+function natureModsHTML(effect) {
+    if (!effect) return '';
+    if (effect.increases === effect.decreases) {
+        return '<span class="nat-mod" style="color:var(--px-mid)">NEUTRA</span>';
+    }
+    return `<span class="nat-mod" style="color:var(--px-good)">${effect.increases}⬆</span>`
+        + `<span class="nat-mod" style="color:var(--px-bad)">${effect.decreases}⬇</span>`;
 }
 
 function syncUiState() {
@@ -301,64 +324,78 @@ function syncUiState() {
     UI_STATE.initialized = true;
 }
 
-function renderIvDetails(viewModel) {
-    const evaluation = PokemonIvEvaluation.evaluate(viewModel.pokemon);
+function renderDetailRows(viewModel) {
     return `
-        <div class="pokemon-details-section">
-            <h4>IVs</h4>
-            <div class="pokemon-iv-grid">
-                ${STAT_KEYS.map((stat) => `
-                    <div class="pokemon-iv">
-                        <span>${stat.toUpperCase()}</span>
-                        <strong data-level="${ivLevel(viewModel.ivs[stat])}">${viewModel.ivs[stat]}</strong>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-        <div class="pokemon-details-section pokemon-iv-assessment">
-            <div class="pokemon-assessment-item"><span class="pokemon-assessment-label">${PokemonIvEvaluation.labelHTML()}</span><strong>${PokemonIvEvaluation.html(viewModel.pokemon)}</strong></div>
-            <div class="pokemon-assessment-item"><span class="pokemon-assessment-label">Ataque (tipo principal)</span><strong>${evaluation.role}</strong></div>
-        </div>
+        <div class="detail-row"><span class="detail-key">Natureza</span><span class="detail-val">${escapeHtml(viewModel.natureName)} ${natureModsHTML(viewModel.natureEffect)}</span></div>
+        <div class="detail-row"><span class="detail-key">Habilidade</span><span class="detail-val" data-ability="${escapeHtml(viewModel.ability)}">${escapeHtml(PokemonAbilityInfo.label(viewModel.ability))}</span></div>
+        <div class="detail-row"><span class="detail-key">Item</span><span class="detail-val">${escapeHtml(viewModel.heldItem)}</span></div>
+        <div class="detail-row"><span class="detail-key">Posição</span><span class="detail-val">${escapeHtml(viewModel.slotLabel)}</span></div>
     `;
 }
 
+function renderIvDetails(viewModel) {
+    return `<div class="pokemon-iv-grid">${STAT_KEYS.map((stat) => `
+        <div class="pokemon-iv">
+            <span class="k">${stat.toUpperCase()}</span>
+            <span class="v" style="color:${ivStatColor(viewModel.ivs[stat])}">${viewModel.ivs[stat]}</span>
+        </div>
+    `).join('')}</div>`;
+}
+
 function renderMoveDetails(viewModel) {
-    const content = viewModel.moves.length
-        ? viewModel.moves.map((move) => `
+    if (!viewModel.moves.length) {
+        return `<div class="moves-head"><span class="px-label">Golpes</span></div><p class="empty">Nenhum golpe disponível.</p>`;
+    }
+    const rows = viewModel.moves.map((move) => {
+        const category = moveCategoryInfo(move.category);
+        const typeBg = move.typeKey ? PokemonPixelIcons.typeColor(move.typeKey) : 'var(--px-bg-track)';
+        const typeIcon = move.typeKey ? PokemonPixelIcons.typeIcon(move.typeKey, PokemonPixelIcons.onColor(typeBg)) : '';
+        return `
             <div class="pokemon-move">
+                <span class="pokemon-move-type" style="background:${typeBg}">${typeIcon}</span>
                 <span class="pokemon-move-name">${escapeHtml(move.name)}</span>
-                ${formatMoveType(move.typeKey)}
-                <span class="pokemon-move-category">${escapeHtml(move.category)}</span>
+                <span class="pokemon-move-category" style="color:${category.color}">${category.label}</span>
+                <span class="pokemon-move-pp">${move.pp ?? '—'} PP</span>
             </div>
-        `).join('')
-        : '<p class="pokemon-details-empty">Nenhum golpe disponível.</p>';
-    return `<div class="pokemon-details-section"><h4>Golpes</h4><div class="pokemon-moves">${content}</div></div>`;
+        `;
+    }).join('');
+    return `<div class="moves-head"><span class="px-label">Golpes</span></div>${rows}`;
 }
 
 function renderPokemonCard(viewModel) {
-    const expanded = UI_STATE.expandedPokemon.has(viewModel.key);
+    const expanded = UI_STATE.forceExpandAll || UI_STATE.expandedPokemon.has(viewModel.key);
     const detailsId = `pokemon-details-${viewModel.key.replace(/:/g, '-')}`;
     const icon = viewModel.iconUrl
         ? `<img class="pokemon-icon" src="${viewModel.iconUrl}" alt="${escapeHtml(viewModel.name)} icon">`
-        : '<span class="pxl-pokeball pokemon-icon-fallback"></span>';
+        : '<span class="pokemon-icon"><span class="pxl-pokeball"></span></span>';
+    const genderClass = viewModel.gender.class === 'male' ? 'pokemon-gender-m' : viewModel.gender.class === 'female' ? 'pokemon-gender-f' : '';
+    const gender = genderClass ? `<span class="${genderClass}">${viewModel.gender.symbol}</span>` : '';
+    const shiny = viewModel.shiny ? '<span data-tip="Shiny!">✨</span>' : '';
+    const chips = viewModel.typeKeys.map((type) => typeTagHTML(type, { stack: true })).join('');
+    const ivColor = ivPercentColor(viewModel.ivPercent);
+    const cardStyle = viewModel.typeKeys[0] ? ` style="--card-type-color:${PokemonPixelIcons.typeColor(viewModel.typeKeys[0])}"` : '';
 
     return `
-        <article class="pokemon-card pokemon-card--${viewModel.location} pxl-panel" data-pokemon-key="${viewModel.key}">
+        <article class="pokemon-card pokemon-card--${viewModel.location}" data-pokemon-key="${viewModel.key}"${cardStyle}>
             <button type="button" class="pokemon-card-toggle" aria-expanded="${expanded}" aria-controls="${detailsId}">
-                <span class="pokemon-name">${icon}<span class="pokemon-name-text">${escapeHtml(viewModel.name)}</span>${formatTypeIcons(viewModel.typeKeys)}</span>
-                <span class="pokemon-level">Lv. ${viewModel.level || '—'}<span class="pokemon-gender ${viewModel.gender.class}">${viewModel.gender.symbol}</span><span class="expand-indicator" aria-hidden="true">${expanded ? '▼' : '▶'}</span></span>
+                ${icon}
+                <span class="pokemon-id-col">
+                    <span class="pokemon-name">
+                        <span class="pokemon-name-text">${escapeHtml(viewModel.name)}</span>
+                        ${gender}
+                        ${shiny}
+                    </span>
+                    <span class="pokemon-chips">${chips}</span>
+                </span>
+                <span class="pokemon-right">
+                    <span class="pokemon-level">Lv. ${viewModel.level || '—'}</span>
+                    <span class="pokemon-ivbar" data-tip="${escapeHtml(ivTooltipText(viewModel.ivs))}">
+                        <span class="px-bar"><span class="px-bar-fill" style="width:${viewModel.ivPercent}%;background:${ivColor}"></span></span>
+                        <span class="pokemon-ivbar-label" style="color:${ivColor}">${viewModel.ivPercent}%</span>
+                    </span>
+                </span>
             </button>
-
-            <div class="pokemon-card-body">
-                <div class="pokemon-info-row">
-                    <div class="pokemon-info"><span class="pokemon-label">Natureza</span><span class="pokemon-value pokemon-nature-value">${natureEffectHTML(escapeHtml(viewModel.natureName))}</span></div>
-                    <div class="pokemon-info"><span class="pokemon-label">Habilidade</span><span class="pokemon-value" data-ability="${escapeHtml(viewModel.ability)}">${escapeHtml(PokemonAbilityInfo.label(viewModel.ability))}</span></div>
-                    <div class="pokemon-info pokemon-info--ivs"><span class="pokemon-label">IVs</span><span class="pokemon-value">${viewModel.ivPercent}%</span></div>
-                </div>
-            </div>
-
-            <div class="pokemon-details" id="${detailsId}" ${expanded ? '' : 'hidden'}>${renderIvDetails(viewModel)}${renderMoveDetails(viewModel)}</div>
-            <div class="pokemon-slot"><span>${escapeHtml(viewModel.slotLabel)}</span><span>${viewModel.shiny ? '✨' : ''}</span><span>Item: ${escapeHtml(viewModel.heldItem)}</span></div>
+            <div class="pokemon-details" id="${detailsId}" ${expanded ? '' : 'hidden'}>${renderDetailRows(viewModel)}${renderIvDetails(viewModel)}${renderMoveDetails(viewModel)}</div>
         </article>
     `;
 }
@@ -375,9 +412,10 @@ function renderCollapsibleGroup(group, viewModels, total) {
         ? `${viewModels.length}/${total}`
         : `${total}/${group.capacity}`;
     return `
-        <section class="pokemon-group ${group.kind === 'party' ? 'party-section' : 'pc-box'}" data-group-key="${group.key}">
+        <section class="pokemon-group" data-group-key="${group.key}">
             <button type="button" class="pokemon-group-toggle" aria-expanded="${expanded}" aria-controls="${contentId}">
-                <span class="group-title"><span class="expand-indicator" aria-hidden="true">${expanded ? '▼' : '▶'}</span>${escapeHtml(group.title)}</span>
+                <span class="group-title">${expanded ? '▾' : '▸'} ${escapeHtml(group.title)}</span>
+                <span class="group-rule"></span>
                 <span class="group-counter">${counter}</span>
             </button>
             <div class="pokemon-group-content" id="${contentId}" ${expanded ? '' : 'hidden'}>${renderPokemonList(viewModels, group.kind)}</div>
@@ -397,42 +435,37 @@ function renderGrouped() {
         filteredByGroup.get('party') || [],
         sourceByGroup.get('party')?.length || 0
     );
-    const pcCount = DATA_STATE.filteredPokemon.filter((viewModel) => viewModel.location === 'pc').length;
-    const pcTotal = DATA_STATE.sourcePokemon.filter((viewModel) => viewModel.location === 'pc').length;
     const pcBoxes = pcGroups.map((group) => {
         const filtered = filteredByGroup.get(group.key) || [];
         if (FILTER_STATE.isFiltering && filtered.length === 0) return '';
         return renderCollapsibleGroup(group, filtered, sourceByGroup.get(group.key)?.length || 0);
     }).join('');
 
-    return `
-        ${party}
-        <section class="pokemon-section pc-section">
-            <div class="section-header"><h2 class="section-title">Meu computador</h2><span class="section-counter">${FILTER_STATE.isFiltering ? `${pcCount}/${pcTotal}` : pcTotal} Pokémon</span></div>
-            <div class="pc-boxes">${pcBoxes || '<p class="empty">Nenhum Pokémon do computador corresponde aos filtros.</p>'}</div>
-        </section>
-    `;
+    return `${party}${pcBoxes}`;
 }
 
 function renderFlat() {
-    return `
-        <section class="pokemon-section flat-pokemon-section">
-            <div class="section-header"><h2 class="section-title">Todos os Pokémon</h2><span class="section-counter">${DATA_STATE.filteredPokemon.length}/${DATA_STATE.sourcePokemon.length}</span></div>
-            ${renderPokemonList(DATA_STATE.filteredPokemon)}
-        </section>
+    const header = `
+        <div class="pokemon-group-toggle" style="cursor:default;">
+            <span class="group-title">Todos os Pokémon</span>
+            <span class="group-rule"></span>
+            <span class="group-counter">${DATA_STATE.filteredPokemon.length}/${DATA_STATE.sourcePokemon.length}</span>
+        </div>
     `;
+    return `${header}${renderPokemonList(DATA_STATE.filteredPokemon)}`;
 }
 
 function syncGlobalControls() {
     const visibleKeys = DATA_STATE.filteredPokemon.map((viewModel) => viewModel.key);
     const groupKeys = DATA_STATE.groups.map((group) => group.key);
     const allGroupsExpanded = groupKeys.length > 0 && groupKeys.every((key) => UI_STATE.expandedGroups.has(key));
-    const allPokemonExpanded = visibleKeys.length > 0 && visibleKeys.every((key) => UI_STATE.expandedPokemon.has(key));
+    const allPokemonExpanded = UI_STATE.forceExpandAll
+        || (visibleKeys.length > 0 && visibleKeys.every((key) => UI_STATE.expandedPokemon.has(key)));
     const removeGroups = FILTER_STATE.advancedEnabled && FILTER_STATE.applied.removeGroups;
-    document.getElementById('expand-all-groups')?.setAttribute('aria-checked', String(allGroupsExpanded));
-    document.getElementById('expand-all-pokemon')?.setAttribute('aria-checked', String(allPokemonExpanded));
-    const groupToggleRow = document.getElementById('expand-all-groups-row');
-    if (groupToggleRow) groupToggleRow.hidden = removeGroups;
+    const groupsToggle = document.getElementById('expand-all-groups');
+    groupsToggle?.setAttribute('aria-pressed', String(allGroupsExpanded));
+    if (groupsToggle) groupsToggle.hidden = removeGroups;
+    document.getElementById('expand-all-pokemon')?.setAttribute('aria-pressed', String(allPokemonExpanded));
 }
 
 function render() {
@@ -493,7 +526,7 @@ function bindControls() {
     });
 
     groupsToggle.addEventListener('click', () => {
-        const shouldExpand = groupsToggle.getAttribute('aria-checked') !== 'true';
+        const shouldExpand = groupsToggle.getAttribute('aria-pressed') !== 'true';
         DATA_STATE.groups.forEach((group) => {
             if (shouldExpand) UI_STATE.expandedGroups.add(group.key);
             else UI_STATE.expandedGroups.delete(group.key);
@@ -502,7 +535,7 @@ function bindControls() {
     });
 
     pokemonToggle.addEventListener('click', () => {
-        const shouldExpand = pokemonToggle.getAttribute('aria-checked') !== 'true';
+        const shouldExpand = pokemonToggle.getAttribute('aria-pressed') !== 'true';
         DATA_STATE.filteredPokemon.forEach((viewModel) => {
             if (shouldExpand) UI_STATE.expandedPokemon.add(viewModel.key);
             else UI_STATE.expandedPokemon.delete(viewModel.key);
@@ -537,4 +570,22 @@ window.addEventListener('message', (event) => {
     if (payload.party?.length > 0) LOCAL_PAYLOAD.party = payload.party;
     rebuildDataState(LOCAL_PAYLOAD);
     applyAndRender();
+});
+
+// modo full do painel (shell) — força todos os detalhes de Pokémon abertos
+// enquanto o iframe estiver maximizado; grupos continuam manuais.
+window.addEventListener('message', (event) => {
+    if (event.data?.type !== 'panel-mode') return;
+    document.body.classList.toggle('full', event.data.full === true);
+    UI_STATE.forceExpandAll = event.data.full === true;
+    render();
+});
+
+// atalhos do painel (repassados pelo shell) — ver content.js/handleShortcut
+window.addEventListener('keydown', (event) => {
+    if (/INPUT|TEXTAREA/.test(event.target.tagName)) return;
+    const key = event.key.toLowerCase();
+    if (['e', 'c', 't', 'm', ',', 'f', 'escape'].includes(key)) {
+        window.parent.postMessage({ type: 'panel-shortcut', key }, '*');
+    }
 });
