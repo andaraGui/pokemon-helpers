@@ -1,54 +1,16 @@
-/* ---------------------------------------------------------------------------
-   Componente de tipo de Pokémon: estilos compartilhados da tag/pill de tipo
-   usados na calculadora (index.html) e em Meus Pokémons (myPokemons.html).
-   --------------------------------------------------------------------------- */
-
-/* ---- Tag de tipo único: ícone + nome/abreviação + cor de fundo ---- */
+/* pill de tipo do design system v2: retangular, ícone pixel + abreviação */
 .type-tag {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 4px 10px 4px 8px;
-    border-radius: 100px;
-    font-size: var(--pxl-fs-sm, 0.64rem);
-    font-weight: 700;
-    color: #1a1a1a;
-    line-height: 1.5;
+    padding: 4px 7px;
+    border-radius: 0;
+    font-family: var(--px-font-mono);
+    font-size: 10px;
+    letter-spacing: .5px;
+    line-height: 1;
     white-space: nowrap;
-    user-select: none;
 }
-
-.type-tag .icon {
-    font-size: 0.95em;
-    line-height: 1;
-    display: inline-flex;
-}
-
-.type-icon-img {
-    width: 3em;
-    height: 3em;
-    display: block;
-    object-fit: contain;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
-}
-
-/* ---- Variante empilhada: ícone em cima, abreviação embaixo (tabela, chips, resultado) ---- */
-.type-tag.mini {
-    flex-direction: column;
-    gap: 1px;
-    padding: 1px 5px 4px 5px;
-    font-size: var(--pxl-fs-md, 0.8rem);
-    border-radius: 6px;
-}
-
-.type-tag.mini .icon {
-    font-size: 1em;
-}
-
-.type-tag.mini .abbr {
-    color: #fff;
-    font-size: 0.6em;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    line-height: 1;
-}
+.type-tag.mini { padding: 2px 5px; font-size: 9px; gap: 4px; }
+.type-tag .abbr { font-family: var(--px-font-mono); }
+.type-icon-px { display: inline-flex; }
