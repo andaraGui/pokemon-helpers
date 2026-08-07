@@ -39,8 +39,8 @@ function paintGrid() {
 
 const hint = document.getElementById('hint');
 
-// ---------- seleção em memória: ALVO no Ataque (máx. 2, mais antigo cai) ----------
-// ---------- ou tipos de ataque a enfrentar na Defesa (sem limite) ----------
+// ---------- seleção em memória: o golpe analisado no Ataque (1 tipo) ----------
+// ---------- ou tipo(s) do Pokémon defensor na Defesa (máx. 2, mais antigo cai) ----------
 let selectedTypes = [];
 
 function getSelectedTypes() {
@@ -53,20 +53,20 @@ function includeDual() {
     return document.getElementById('include-dual').getAttribute('aria-pressed') === 'true';
 }
 
-// Aplica as regras de cada modo (só o botão 2T muda: combinações de dois
-// tipos só existem no modo Defesa, já que um golpe é sempre mono-tipo) e
-// atualiza chips/hint antes de recalcular.
+// Aplica as regras de cada modo (só o botão 2T muda: as combinações de dois
+// tipos são os DEFENSORES listados no modo Ataque; no modo Defesa as linhas
+// são golpes, sempre mono-tipo) e atualiza chips/hint antes de recalcular.
 function enforceModeConstraints() {
     const mode = getMode();
     const dualBtn = document.getElementById('include-dual');
 
-    if (mode === 'ataque') {
+    if (mode === 'defesa') {
         // aria-disabled (não a propriedade `disabled`) pra manter o botão
         // focável/hover-ável — senão o data-tip explicando o motivo nunca
         // dispara, já que elementos disabled não recebem eventos de mouse.
         dualBtn.setAttribute('aria-disabled', 'true');
         dualBtn.setAttribute('aria-pressed', 'false');
-        dualBtn.dataset.tip = 'Só disponível no modo Defesa — um golpe é sempre de um tipo só.';
+        dualBtn.dataset.tip = 'Só disponível no modo Ataque — um golpe é sempre de um tipo só.';
     } else {
         dualBtn.setAttribute('aria-disabled', 'false');
         dualBtn.dataset.tip = 'Incluir combinações de dois tipos (ex: Água/Voador)';
@@ -78,20 +78,20 @@ function enforceModeConstraints() {
     const n = selectedTypes.length;
     if (n === 0) {
         hint.textContent = 'Selecione ao menos um tipo acima.';
-    } else if (mode === 'ataque') {
+    } else if (mode === 'defesa') {
         hint.textContent = n === 1
-            ? '1 tipo selecionado (alvo mono-tipo).'
-            : '2 tipos selecionados (alvo dual-type).';
+            ? '1 tipo selecionado (defensor mono-tipo).'
+            : '2 tipos selecionados (defensor dual-type).';
     } else {
-        hint.textContent = `${n} tipo(s) de ataque selecionado(s) (sem limite).`;
+        hint.textContent = 'Golpe selecionado — dano causado em cada tipo defensor.';
     }
 
     calculate();
 }
 
 // preenche os chips e o tooltip/label da linha com o resumo da seleção —
-// no modo Ataque é o ALVO (até 2 tipos); no modo Defesa é a lista de
-// ataques independentes a enfrentar (sem limite de quantidade)
+// no modo Ataque é o golpe analisado (1 tipo, não necessariamente seu);
+// no modo Defesa é o Pokémon defensor (até 2 tipos)
 function renderTargetChips() {
     const chips = document.getElementById('target-chips');
     const row = document.getElementById('target-row');
@@ -99,20 +99,19 @@ function renderTargetChips() {
     chips.innerHTML = selectedTypes.map((type) => typeTagHTML(type)).join('');
 
     if (getMode() === 'ataque') {
-        label.textContent = 'ALVO';
+        label.textContent = 'GOLPE';
         if (selectedTypes.length === 0) {
-            row.dataset.tip = 'Selecione até 2 tipos do alvo.';
+            row.dataset.tip = 'Selecione o tipo do golpe a analisar.';
         } else {
-            const names = selectedTypes.map((type) => LABELS[type]).join(' / ');
-            row.dataset.tip = selectedTypes.length === 2 ? `Alvo: ${names} (duplo)` : `Alvo: ${names}`;
+            row.dataset.tip = `Golpe: ${LABELS[selectedTypes[0]]}`;
         }
     } else {
-        label.textContent = 'ATAQUES';
+        label.textContent = 'DEFENSOR';
         if (selectedTypes.length === 0) {
-            row.dataset.tip = 'Selecione um ou mais tipos de ataque a enfrentar (sem limite).';
+            row.dataset.tip = 'Selecione até 2 tipos do Pokémon defensor.';
         } else {
             const names = selectedTypes.map((type) => LABELS[type]).join(' / ');
-            row.dataset.tip = `Enfrentando: ${names}`;
+            row.dataset.tip = selectedTypes.length === 2 ? `Defensor: ${names} (duplo)` : `Defensor: ${names}`;
         }
     }
 }
@@ -126,19 +125,20 @@ grid.addEventListener('click', (event) => {
         selectedTypes.splice(idx, 1);
     } else {
         selectedTypes.push(type);
-        // no modo Ataque o alvo é sempre 1 ou 2 tipos: o mais antigo cai.
-        // no modo Defesa qualquer quantidade de tipos de ataque pode ser
-        // marcada (são ataques independentes, não um único "alvo").
-        if (getMode() === 'ataque' && selectedTypes.length > 2) selectedTypes.shift();
+        // Ataque analisa UM golpe por vez (golpe é mono-tipo): o anterior cai.
+        // Defesa: o Pokémon defensor tem 1 ou 2 tipos: o mais antigo cai.
+        const limit = getMode() === 'ataque' ? 1 : 2;
+        while (selectedTypes.length > limit) selectedTypes.shift();
     }
     enforceModeConstraints();
 });
 
 function setMode(mode) {
-    // ao trocar pra Ataque vindo de Defesa com mais de 2 tipos marcados,
-    // mantém só os 2 mais recentes (Defesa não tem limite de seleção)
-    if (mode === 'ataque' && selectedTypes.length > 2) {
-        selectedTypes = selectedTypes.slice(-2);
+    // ao trocar de modo, encaixa a seleção no limite do modo novo
+    // (Ataque analisa 1 golpe; Defesa aceita até 2 tipos do defensor)
+    const limit = mode === 'ataque' ? 1 : 2;
+    if (selectedTypes.length > limit) {
+        selectedTypes = selectedTypes.slice(-limit);
     }
     document.getElementById('mode-ataque').classList.toggle('active', mode === 'ataque');
     document.getElementById('mode-defesa').classList.toggle('active', mode === 'defesa');
@@ -174,20 +174,20 @@ function calculate() {
 
     let entries;
     if (mode === 'ataque') {
-        // "selected" = o(s) tipo(s) do ALVO. Um golpe é sempre de 1 tipo só, então
-        // combinações não existem nesse modo — o botão 2T não se aplica aqui.
-        entries = TYPES.map((t) => ({ combo: [t], value: defMultiplier(t, selected) }));
-    } else {
-        // "selected" = lista de tipos de ATAQUE independentes a enfrentar.
-        // Aqui os tipos duplos combinam de verdade na defesa. COMBOS já inclui os
-        // 18 tipos puros + 153 duplos — ligar o 2T nunca remove os puros, só
-        // adiciona os duplos à lista.
+        // "selected" = o tipo do golpe analisado (não necessariamente seu — vale
+        // pra avaliar o golpe do oponente também). Linhas = defensores; com 2T
+        // ligado entram as combinações duplas (COMBOS já inclui os 18 puros +
+        // 153 duplos — ligar o 2T nunca remove os puros, só adiciona os duplos).
         const candidates = includeDual() ? COMBOS : TYPES.map((t) => [t]);
         entries = candidates.map((combo) => ({
-            // pior multiplicador que esse combo toma de qualquer um dos tipos selecionados
             combo,
-            value: Math.max(...selected.map((s) => defMultiplier(s, combo))),
+            value: defMultiplier(selected[0], combo),
         }));
+    } else {
+        // "selected" = tipo(s) do Pokémon defensor (1 ou 2). Linhas = os 18
+        // tipos de golpe (mono — o 2T não se aplica aqui); valor = dano que
+        // cada golpe causa nesse defensor.
+        entries = TYPES.map((t) => ({ combo: [t], value: defMultiplier(t, selected) }));
     }
 
     document.getElementById('results-body').innerHTML = renderGroupedResults(entries, mode);
@@ -195,8 +195,8 @@ function calculate() {
 }
 
 // mesmas faixas de cor do modo Ataque (classes .mult-* de pixel-theme.css),
-// mas cruzadas: aqui multiplicador BAIXO é bom (você recebe pouco dano) e
-// ALTO é ruim, então os tons verdes/vermelhos são reaproveitados invertidos
+// mas cruzadas: aqui multiplicador BAIXO é bom (o defensor recebe pouco dano)
+// e ALTO é ruim, então os tons verdes/vermelhos são reaproveitados invertidos
 function multClassDefesa(v) {
     if (v === 0 || v === 0.25) return 'mult-4';   // melhor caso: imune ou 1/4
     if (v === 0.5) return 'mult-2';                // resiste
@@ -205,13 +205,13 @@ function multClassDefesa(v) {
     return 'mult-0-25';                            // v === 4, pior caso
 }
 
-// agrupa as entradas já calculadas (ataque: dano causado; defesa: pior dano
-// recebido) por valor de multiplicador e renderiza uma linha por faixa.
-// Ataque: ordem 4x→0x, verde = dano alto causado (mockup atual, inalterado).
-// Defesa: ordem 0x→4x (melhor defensor primeiro), verde = resiste/imune,
-// vermelho = fraco — semântica antiga (pré-redesign) restaurada por decisão
-// do usuário. O 1x fica de fora da Defesa (não aparecia na versão antiga:
-// não é nem resistência nem fraqueza, então não ajuda a decisão).
+// agrupa as entradas já calculadas (ataque: dano que o golpe causa em cada
+// defensor; defesa: dano que cada golpe causa no defensor selecionado) por
+// valor de multiplicador e renderiza uma linha por faixa.
+// Ataque: ordem 4x→0x, verde = o golpe tem vantagem.
+// Defesa: ordem 0x→4x (golpes menos efetivos primeiro), verde = o defensor
+// resiste/é imune, vermelho = apanha. O 1x fica de fora da Defesa (não é
+// nem resistência nem fraqueza, então não ajuda a decisão).
 function renderGroupedResults(entries, mode) {
     const order = mode === 'defesa' ? [0, .25, .5, 2, 4] : [4, 2, 1, .5, .25, 0];
     const classFor = mode === 'defesa' ? multClassDefesa : multClass;

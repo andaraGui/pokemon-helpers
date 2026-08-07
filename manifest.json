@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "IfinityMMO Helper",
+  "name": "Infinity MMO Extension",
   "version": "1.4.51",
   "description": "",
   "action": {},
@@ -8,11 +8,11 @@
     "service_worker": "background.js"
   },
   "permissions": ["activeTab", "alarms", "scripting", "storage"],
-  "host_permissions": ["*://infinitymmo.net/*", "*://*.infinitymmo.net/*", "https://raw.githubusercontent.com/andaraGui/pokemon-helpers/*"],
+  "host_permissions": ["*://infinitymmo.net/*", "*://*.infinitymmo.net/*", "https://raw.githubusercontent.com/andaraGui/pokemon-infinity-mmo-extension/*"],
   "commands": {
     "toggle-overlay": {
       "suggested_key": { "default": "Ctrl+Shift+Y" },
-      "description": "Abrir/fechar o overlay do Pokemon Helper"
+      "description": "Abrir/fechar o overlay do Infinity MMO Extension"
     }
   },
   "web_accessible_resources": [
