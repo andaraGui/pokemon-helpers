@@ -325,11 +325,16 @@ function syncUiState() {
 }
 
 function renderDetailRows(viewModel) {
+    // avaliação de IVs/natureza/stats (grade Ruim..Excelente) + papel ofensivo
+    // principal — mesma fonte (PokemonIvEvaluation) usada no encontro (battle.js)
+    const evaluation = PokemonIvEvaluation.evaluate(viewModel.pokemon);
     return `
         <div class="detail-row"><span class="detail-key">Natureza</span><span class="detail-val">${escapeHtml(viewModel.natureName)} ${natureModsHTML(viewModel.natureEffect)}</span></div>
         <div class="detail-row"><span class="detail-key">Habilidade</span><span class="detail-val" data-ability="${escapeHtml(viewModel.ability)}">${escapeHtml(PokemonAbilityInfo.label(viewModel.ability))}</span></div>
         <div class="detail-row"><span class="detail-key">Item</span><span class="detail-val">${escapeHtml(viewModel.heldItem)}</span></div>
         <div class="detail-row"><span class="detail-key">Posição</span><span class="detail-val">${escapeHtml(viewModel.slotLabel)}</span></div>
+        <div class="detail-row" data-tip="Avalia IVs, natureza e stats base pra classificar o Pokémon."><span class="detail-key">Avaliação</span><span class="detail-val">${PokemonIvEvaluation.html(viewModel.pokemon)}</span></div>
+        <div class="detail-row"><span class="detail-key">Atq Principal</span><span class="detail-val">${escapeHtml(evaluation.role)}</span></div>
     `;
 }
 
@@ -553,6 +558,11 @@ function bindControls() {
         }
         const pokemonButton = event.target.closest('.pokemon-card-toggle');
         if (pokemonButton) {
+            // no modo full o estado exibido já é forçado (OR'd em
+            // renderPokemonCard) — clicar aqui não deve gravar nada no Set,
+            // senão o card fica "marcado" como expandido depois que o modo
+            // full termina, mesmo sem o usuário ter pedido isso.
+            if (UI_STATE.forceExpandAll) return;
             const card = pokemonButton.closest('[data-pokemon-key]');
             if (card) toggleSetValue(UI_STATE.expandedPokemon, card.dataset.pokemonKey);
             render();
