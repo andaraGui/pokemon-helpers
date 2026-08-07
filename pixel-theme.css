@@ -80,6 +80,7 @@
 }
 .px-btn.active { background: var(--px-accent); border-color: var(--px-accent); color: var(--px-on-dark); }
 .px-btn.px-btn-accent { color: var(--px-accent); }
+.px-btn:disabled, .px-btn[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
 
 .px-toggle {
     width: 40px; height: 22px;
@@ -94,6 +95,15 @@
 
 .px-bar { height: 5px; background: var(--px-bg-track); }
 .px-bar-fill { height: 100%; }
+
+/* grade da avaliação de IVs (PokemonIvEvaluation.html) — usada tanto em
+   myPokemons.html (card do Pokémon) quanto em battle.js (avaliação do
+   oponente); cores mapeadas pros tokens px-* que batem com a paleta antiga */
+.iv-rating[data-rating="ruim"] { color: var(--px-bad); }
+.iv-rating[data-rating="medio"] { color: var(--px-mid); }
+.iv-rating[data-rating="bom"] { color: var(--px-good); }
+.iv-rating[data-rating="muito-bom"] { color: var(--px-male); }
+.iv-rating[data-rating="excelente"] { color: var(--t-fairy); }
 
 .px-input {
     background: var(--px-bg-card);

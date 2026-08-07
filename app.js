@@ -60,11 +60,14 @@ function enforceModeConstraints() {
     const dualBtn = document.getElementById('include-dual');
 
     if (mode === 'ataque') {
-        dualBtn.disabled = true;
+        // aria-disabled (não a propriedade `disabled`) pra manter o botão
+        // focável/hover-ável — senão o data-tip explicando o motivo nunca
+        // dispara, já que elementos disabled não recebem eventos de mouse.
+        dualBtn.setAttribute('aria-disabled', 'true');
         dualBtn.setAttribute('aria-pressed', 'false');
         dualBtn.dataset.tip = 'Só disponível no modo Defesa — um golpe é sempre de um tipo só.';
     } else {
-        dualBtn.disabled = false;
+        dualBtn.setAttribute('aria-disabled', 'false');
         dualBtn.dataset.tip = 'Incluir combinações de dois tipos (ex: Água/Voador)';
     }
 
@@ -79,7 +82,7 @@ function enforceModeConstraints() {
             ? '1 tipo selecionado (alvo mono-tipo).'
             : '2 tipos selecionados (alvo dual-type).';
     } else {
-        hint.textContent = `${n} tipo(s) de ataque selecionado(s).`;
+        hint.textContent = `${n}/2 tipos de ataque selecionados (até 2).`;
     }
 
     calculate();
@@ -122,7 +125,7 @@ document.getElementById('mode-defesa').addEventListener('click', () => setMode('
 
 document.getElementById('include-dual').addEventListener('click', (event) => {
     const btn = event.currentTarget;
-    if (btn.disabled) return;
+    if (btn.getAttribute('aria-disabled') === 'true') return;
     const on = btn.getAttribute('aria-pressed') === 'true';
     btn.setAttribute('aria-pressed', String(!on));
     calculate();
@@ -175,10 +178,16 @@ function renderGroupedResults(entries) {
     entries.forEach(({ combo, value }) => { if (byValue.has(value)) byValue.get(value).push(combo); });
     return `<div class="calc-rows">` + order
         .filter((value) => byValue.get(value).length)
-        .map((value) => `<div class="calc-row">
+        .map((value) => {
+            const combos = byValue.get(value);
+            const overflow = combos.length > 24
+                ? `<span class="calc-more" data-tip="Mais ${combos.length - 24} combinações neste grupo">+${combos.length - 24}</span>`
+                : '';
+            return `<div class="calc-row">
             <span class="calc-mult ${multClass(value)}">${multLabel(value)}</span>
-            <span class="calc-types">${byValue.get(value).slice(0, 24).map((combo) => typeTagHTML(combo)).join('')}</span>
-        </div>`).join('') + `</div>`;
+            <span class="calc-types">${combos.slice(0, 24).map((combo) => typeTagHTML(combo)).join('')}${overflow}</span>
+        </div>`;
+        }).join('') + `</div>`;
 }
 
 // atalhos do painel: repassa a tecla pro shell (iframe -> parent) trocar de aba

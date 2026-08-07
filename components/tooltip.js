@@ -27,12 +27,16 @@ var PokemonHelperTooltip = globalThis.PokemonHelperTooltip || (() => {
                 padding: 6px 9px; background: #08080d; border: 1px solid #3a3a4c;
                 box-shadow: 2px 2px 0 rgba(0,0,0,.5);
                 font-family: 'Pixelify Sans', monospace; font-size: 15px; line-height: 1.35;
-                color: #e6e6f0; pointer-events: none; display: none;
+                color: #e6e6f0; pointer-events: none; display: none; white-space: pre-line;
             }`;
         doc.head.appendChild(style);
         box = doc.createElement('div');
         box.id = 'px-tooltip';
-        doc.body.appendChild(box);
+        // appendado no <html>, não no <body>: no content script do jogo o
+        // overlay do painel (#pokemon-type-matchup-overlay) também é filho de
+        // documentElement com o mesmo z-index — em empate, quem vem depois na
+        // ordem do DOM pinta por cima, e o body normalmente vem antes.
+        doc.documentElement.appendChild(box);
         return box;
     }
 

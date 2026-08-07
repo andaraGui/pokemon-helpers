@@ -62,13 +62,8 @@
            sem isso o ícone fica cortado pelo ellipsis da linha */
         .detail-val[data-ability] { overflow: visible; white-space: normal; }
         .nat-mod { font-family: var(--px-font-mono); font-size: 8px; padding: 2px 4px; background: var(--px-bg-btn2); }
-        /* grade da avaliação de IVs (PokemonIvEvaluation.html) — cores mapeadas
-           pros tokens px-* que batem exatamente com a paleta antiga */
-        .iv-rating[data-rating="ruim"] { color: var(--px-bad); }
-        .iv-rating[data-rating="medio"] { color: var(--px-mid); }
-        .iv-rating[data-rating="bom"] { color: var(--px-good); }
-        .iv-rating[data-rating="muito-bom"] { color: var(--px-male); }
-        .iv-rating[data-rating="excelente"] { color: var(--t-fairy); }
+        /* regras .iv-rating[data-rating] moradas em pixel-theme.css — battle.js
+           também renderiza PokemonIvEvaluation.html(foe) e precisa delas. */
         .pokemon-iv-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
         .pokemon-iv { display: flex; flex-direction: column; align-items: center; gap: 2px; background: var(--px-bg-btn2); padding: 3px 0; }
         .pokemon-iv .k { font-family: var(--px-font-mono); font-size: 8px; color: var(--px-text-dim); }

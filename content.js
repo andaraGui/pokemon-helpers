@@ -106,6 +106,19 @@
 
         const settingsPanel = buildSettingsPanel();
 
+        // syncFullSide (chamado no build()) roda ANTES desses iframes
+        // terminarem de carregar, e a guarda de assinatura em __phFullSignature
+        // suprime reenvios quando o estado não muda — então um 'maximized'
+        // persistido do storage nunca chega no iframe recém-criado por aquele
+        // caminho. Cada frame recebe seu próprio postMessage direto assim que
+        // carrega, sem passar pela guarda, com o estado atual lido do MESMO
+        // objeto `settings` que o resto do build() usa.
+        [calcFrame, battleFrame, myPokemonsFrame, chartFrame].forEach((frame) => {
+            frame.addEventListener('load', () => {
+                frame.contentWindow?.postMessage({ type: 'panel-mode', full: settings.maximized === true }, '*');
+            });
+        });
+
         body.appendChild(calcFrame);
         body.appendChild(battleFrame);
         body.appendChild(myPokemonsFrame);
@@ -211,6 +224,9 @@
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup', onUp);
                     persist(currentSettings(container));
+                    updateStatus(container, settings);
+                    const widthValue = container.querySelector('#ph-width-value');
+                    if (widthValue) widthValue.textContent = `${dockedWidth(settings)}px`;
                 };
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
@@ -597,14 +613,6 @@
             });
         });
 
-        // "largura" no painel de config é sempre a largura ENCAIXADA — com o
-        // painel expandido (F) não existe uma largura encaixada visível, então
-        // mostramos/editamos o valor guardado em `restoreWidth` (o que volta
-        // a valer quando o usuário sair do modo expandido).
-        function dockedWidth(settings) {
-            return settings.maximized ? (settings.restoreWidth || DEFAULT_SETTINGS.width) : settings.width;
-        }
-
         const widthValue = panel.querySelector('#ph-width-value');
         function applyWidth(delta) {
             const container = document.getElementById(ID);
@@ -655,6 +663,16 @@
         const n = parseInt(value, 10);
         if (Number.isNaN(n)) return fallback;
         return Math.min(max, Math.max(min, n));
+    }
+
+    // "largura" no painel de config é sempre a largura ENCAIXADA — com o
+    // painel expandido (F) não existe uma largura encaixada visível, então
+    // mostramos/editamos o valor guardado em `restoreWidth` (o que volta
+    // a valer quando o usuário sair do modo expandido). Vive no escopo do
+    // módulo (não só dentro de buildSettingsPanel) porque o onUp do
+    // redimensionamento, em build(), também precisa dele.
+    function dockedWidth(settings) {
+        return settings.maximized ? (settings.restoreWidth || DEFAULT_SETTINGS.width) : settings.width;
     }
 
     function applyBox(container, settings) {

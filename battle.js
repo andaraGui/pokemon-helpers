@@ -372,9 +372,12 @@ function render() {
     const foeTypes = typeNames(foe.types);
     const hpPct = foe.maxHp > 0 ? Math.max(0, Math.min(100, foe.hp / foe.maxHp * 100)) : 0;
     const hpLevel = hpPct <= 20 ? 'low' : hpPct <= 50 ? 'mid' : 'high';
-    const gender = foe.gender === 'female' || foe.gender === 'f' || foe.gender === '♀'
+    const genderValue = String(foe.gender || '').toLowerCase();
+    const gender = ['female', 'f', '♀'].includes(genderValue)
         ? '<span class="enc-gender-f">♀</span>'
-        : foe.gender ? '<span class="enc-gender-m">♂</span>' : '';
+        : ['male', 'm', '♂'].includes(genderValue)
+            ? '<span class="enc-gender-m">♂</span>'
+            : '';
 
     const head = `<div class="enc-head">
         <div class="enc-sprite">SPRITE</div>
