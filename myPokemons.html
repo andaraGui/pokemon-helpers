@@ -22,7 +22,7 @@
 
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; padding: 9px 10px 14px; background: var(--px-bg); color: var(--px-text); font-family: var(--px-font-body); font-size: 15px; }
+        body { margin: 0; padding: 9px 10px 14px; background: var(--px-bg); color: var(--px-text); font-family: var(--px-font-body); font-size: 12px; }
         .page-container { width: 100%; }
         .pokemon-toolbar { display: grid; gap: 8px; margin-bottom: 8px; }
         .pokemon-toolbar-main { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 4px; }
@@ -49,14 +49,14 @@
         .pokemon-gender-m { color: var(--px-male); }
         .pokemon-chips { display: flex; gap: 3px; }
         .pokemon-right { text-align: right; display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
-        .pokemon-level { font-size: 15px; color: var(--px-text-val); }
+        .pokemon-level { font-size: 12px; color: var(--px-text-val); }
         .pokemon-ivbar { display: flex; align-items: center; gap: 4px; }
         .pokemon-ivbar .px-bar { width: 34px; }
         .pokemon-ivbar-label { font-family: var(--px-font-mono); font-size: 9px; width: 34px; text-align: right; }
         .pokemon-details { display: flex; flex-direction: column; gap: 6px; padding-top: 6px; border-top: 1px solid var(--px-line); }
         .detail-row { display: flex; gap: 6px; min-width: 0; align-items: baseline; }
         .detail-key { font-family: var(--px-font-mono); font-size: 8px; color: var(--px-text-dim); width: 62px; flex: 0 0 auto; text-transform: uppercase; }
-        .detail-val { font-size: 15px; color: var(--px-text-val); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        .detail-val { font-size: 12px; color: var(--px-text-val); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
         /* habilidade injeta o ⓘ padrão (components/tooltip.js) —
            sem isso o ícone fica cortado pelo ellipsis da linha */
         .detail-val[data-ability] { overflow: visible; white-space: normal; }
@@ -71,7 +71,7 @@
         .moves-head::after { content: ''; flex: 1; height: 1px; background: var(--px-line); }
         .pokemon-move { display: flex; align-items: center; gap: 7px; background: var(--px-bg-btn2); padding: 4px 6px; }
         .pokemon-move-type { width: 24px; height: 24px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
-        .pokemon-move-name { flex: 1; min-width: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pokemon-move-name { flex: 1; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pokemon-move-category { font-family: var(--px-font-mono); font-size: 9px; }
         .pokemon-move-pp { font-family: var(--px-font-mono); font-size: 9px; color: var(--px-text-dim); width: 44px; text-align: right; }
         .empty { margin: 0; padding: 16px; border: 1px dashed var(--px-border); text-align: center; color: var(--px-text-dim); }

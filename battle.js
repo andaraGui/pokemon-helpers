@@ -251,18 +251,26 @@ function recordDiscoveredMove(slug) {
     render();
 }
 
-// resolve os golpes do oponente na seguinte ordem de prioridade:
+// resolve os golpes do oponente mesclando as fontes (dedupe por slug, máx. 4):
 // 1) golpes já vistos em batalhas anteriores contra esse mesmo oponente recorrente;
 // 2) moveset exato de treinador (quando é batalha de treinador e casa espécie+nível);
 // 3) heurística por nível (fallback pra selvagens/sem dados de treinador).
+// Cada golpe carrega sua origem — confirmados ganham selo VISTO na renderização.
+// Mesclar (em vez de substituir pela fonte de maior prioridade) garante que a
+// lista nunca encolhe no meio da luta quando um golpe é confirmado.
 function resolveFoeMoves(foe) {
-    const discovered = discoveredMovesFor(foe);
-    if (discovered?.length) return { source: 'discovered', moves: movesWithTypes(discovered), seenCount: discovered.length };
-    if (state.kind === 'trainer') {
-        const trainerSlugs = trainerMovesFor(foe);
-        if (trainerSlugs) return { source: 'trainer', moves: movesWithTypes(trainerSlugs) };
-    }
-    return { source: 'heuristic', moves: probableMoves(foe) };
+    const discovered = discoveredMovesFor(foe) || [];
+    const merged = [];
+    const seen = new Set();
+    const push = (moves, source) => moves.forEach((move) => {
+        if (merged.length >= 4 || seen.has(move.slug)) return;
+        seen.add(move.slug);
+        merged.push({ ...move, source });
+    });
+    push(movesWithTypes(discovered), 'discovered');
+    if (state.kind === 'trainer') push(movesWithTypes(trainerMovesFor(foe) || []), 'trainer');
+    push(probableMoves(foe), 'heuristic');
+    return { moves: merged, seenCount: merged.filter((move) => move.source === 'discovered').length };
 }
 
 const MOVE_SOURCE_LABELS = {
@@ -270,6 +278,18 @@ const MOVE_SOURCE_LABELS = {
     trainer: 'Confirmado: moveset exato desse treinador, vindo da wiki.',
     heuristic: 'Estimado pelo nível do Pokémon — ainda sem dados exatos.'
 };
+
+// texto do ⓘ do cabeçalho GOLPES DELE: fonte única usa o rótulo existente;
+// lista mista enumera só as fontes realmente presentes
+function foeMovesHint(resolved) {
+    const sources = new Set(resolved.moves.map((move) => move.source));
+    if (sources.size <= 1) return MOVE_SOURCE_LABELS[resolved.moves[0]?.source] || '';
+    const parts = [];
+    if (sources.has('discovered')) parts.push(`${resolved.seenCount} confirmado(s) em batalha (selo VISTO)`);
+    if (sources.has('trainer')) parts.push('moveset do treinador (wiki)');
+    if (sources.has('heuristic')) parts.push('estimados pelo nível');
+    return `Mistura de fontes: ${parts.join(' + ')}.`;
+}
 
 const MOVE_CATEGORY_LABELS = { physical: 'Físico', special: 'Especial', status: 'Status' };
 
@@ -315,8 +335,7 @@ function moveWorstCase(moveType) {
 function renderFoeMoves(foe) {
     const resolved = resolveFoeMoves(foe);
     if (!resolved.moves.length) return '';
-    const sourceHint = MOVE_SOURCE_LABELS[resolved.source]
-        + (resolved.source === 'discovered' && resolved.seenCount < 4 ? ` (${resolved.seenCount}/4 vistos até agora)` : '');
+    const sourceHint = foeMovesHint(resolved);
     const items = resolved.moves.map((move) => {
         const isStatus = STATUS_MOVES.has(move.slug);
         if (!isStatus && !autoExpandedMoves.has(move.slug)) {
@@ -344,7 +363,7 @@ function renderFoeMoves(foe) {
         return `<div class="move-item">
             <div class="move-main" data-tip="${escapeHtml(moveTooltip(move.slug))}">
                 <span class="move-type-box" style="background:${typeBg}">${PokemonPixelIcons.typeIcon(move.type, fg)}</span>
-                <span class="move-info"><span class="move-name">${escapeHtml(moveLabel(move.slug))}</span><span class="move-sub">${sub}</span></span>
+                <span class="move-info"><span class="move-name-row"><span class="move-name">${escapeHtml(moveLabel(move.slug))}</span>${move.source === 'discovered' ? '<span class="move-seen" data-tip="Golpe confirmado: visto em batalha contra esse oponente.">VISTO</span>' : ''}</span><span class="move-sub">${sub}</span></span>
                 ${multChip}
                 <button type="button" class="move-expand${open ? ' open' : ''}" data-action="toggle-move" data-slug="${move.slug}"
                     data-tip="${open ? 'Fechar' : 'Ver'} contra quais tipos ${escapeHtml(moveLabel(move.slug))} é forte ou fraco">${open ? '▾' : '▸'}</button>

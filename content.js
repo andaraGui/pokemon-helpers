@@ -316,21 +316,44 @@
             setActiveView(btn.dataset.view, container);
         });
 
+        // cliques no shell (cabeçalho, botões) focam o elemento clicado e
+        // "roubam" o teclado do jogo — devolve o foco após o clique. Exceção:
+        // aba Configurações, onde inputs e captura de atalho precisam de foco.
+        container.addEventListener('click', () => {
+            if (container.dataset.activeView === 'settings') return;
+            const active = document.activeElement;
+            if (active && container.contains(active) && !/INPUT|TEXTAREA|SELECT/.test(active.tagName)) active.blur();
+        });
+
         // a tabela 18×18 só aparece no modo expandido, ao lado das views de
         // conteúdo (syncFullSide) — estas são as views que a exibem
         const CHART_HOST_VIEWS = ['calc', 'battle'];
         const VIEW_ACTIONS = { battle: 'battle', calc: 'calc', myPokemons: 'myPokemons', settings: 'settings' };
 
+        // retorna true quando de fato executou algo, false quando não fez nada
+        // (ex.: painel colapsado ignora toggleFull/minimize) — quem consome a
+        // tecla no listener global usa esse retorno pra saber se deve mesmo
+        // impedir que o jogo a receba
         function performAction(action) {
             const container = document.getElementById(ID);
-            if (!container || container.classList.contains('collapsed')) return;
+            if (!container) return false;
+            if (container.classList.contains('collapsed')) {
+                // da bolha, atalho de view expande e abre a aba;
+                // toggleFull/minimize não fazem sentido colapsado
+                if (!VIEW_ACTIONS[action] && action !== 'typeChart') return false;
+                setCollapsed(container, currentSettings(container), false);
+            }
             const settings = currentSettings(container);
             if (VIEW_ACTIONS[action]) {
                 delete container.dataset.preBattleView;
                 setActiveView(VIEW_ACTIONS[action], container);
-            } else if (action === 'toggleFull') {
+                return true;
+            }
+            if (action === 'toggleFull') {
                 container.querySelector('.ph-maximize-btn')?.click();
-            } else if (action === 'typeChart') {
+                return true;
+            }
+            if (action === 'typeChart') {
                 // atalho dedicado da tabela de tipos: de qualquer tela, expande
                 // o painel já com a tabela à mostra; de novo, volta ao encaixado
                 const view = container.dataset.activeView || 'calc';
@@ -341,26 +364,29 @@
                     if (!CHART_HOST_VIEWS.includes(view)) setActiveView('calc', container);
                     if (!settings.maximized) container.querySelector('.ph-maximize-btn')?.click();
                 }
-            } else if (action === 'minimize') {
+                return true;
+            }
+            if (action === 'minimize') {
                 if (settings.maximized) container.querySelector('.ph-maximize-btn')?.click();
                 else setCollapsed(container, settings, true);
+                return true;
             }
+            return false;
+        }
+
+        // combo do evento → nome da ação configurada (ou null)
+        function actionForCombo(evtLike) {
+            const combo = PokemonHelperShortcutUtils.comboFromEvent(evtLike);
+            if (!combo) return null;
+            const shortcuts = uiPrefs().shortcuts;
+            return Object.keys(shortcuts).find((name) => shortcuts[name] === combo) || null;
         }
 
         // evtLike: KeyboardEvent ou o objeto serializado do shortcut-forwarder
         function handleShortcut(evtLike) {
-            const combo = PokemonHelperShortcutUtils.comboFromEvent(evtLike);
-            if (!combo) return;
-            const shortcuts = uiPrefs().shortcuts;
-            const action = Object.keys(shortcuts).find((name) => shortcuts[name] === combo);
+            const action = actionForCombo(evtLike);
             if (action) performAction(action);
         }
-        // atalhos só valem com o evento no painel (nunca no documento do jogo —
-        // o jogo usa essas teclas pra gameplay)
-        container.addEventListener('keydown', (event) => {
-            if (/INPUT|TEXTAREA|SELECT/.test(event.target.tagName)) return;
-            handleShortcut(event);
-        });
         // registrado uma única vez em `window` (persiste entre toggles da
         // extensão, ao contrário do `container`, que é recriado do zero a cada
         // vez) — sem essa guarda, cada toggle empilharia mais um listener e um
@@ -377,7 +403,54 @@
                     const settings = overlay && currentSettings(overlay);
                     if (settings?.maximized) overlay.querySelector('.ph-maximize-btn')?.click();
                 }
+                if (data.type === 'panel-interaction') {
+                    // clique dentro de um iframe do painel moveu o foco pra ele e o
+                    // jogo parou de receber teclado — devolve o foco ao documento
+                    // do jogo tirando-o do iframe
+                    const overlay = document.getElementById(ID);
+                    if (!overlay || overlay.dataset.activeView === 'settings') return;
+                    const active = document.activeElement;
+                    if (active && active.classList && active.classList.contains('ph-frame')) active.blur();
+                }
             });
+        }
+        // atalhos globais: funcionam com o foco no documento do jogo. Tecla que
+        // bate com um atalho configurado é CONSUMIDA (o jogo não a vê) — quem
+        // quiser reservar uma tecla pro jogo troca o atalho nas Configurações.
+        // Capture phase pra agir antes dos listeners do próprio jogo; guarda em
+        // window pela mesma razão do bloco acima (o listener fica no document,
+        // que sobrevive aos toggles do painel).
+        if (!window.__pkmnHelperGlobalShortcutAdded) {
+            window.__pkmnHelperGlobalShortcutAdded = true;
+            document.addEventListener('keydown', (event) => {
+                // segurar a tecla não pode reexecutar a ação ~30x/s nem floodar
+                // o chrome.storage com gravações via persist()
+                if (event.repeat) return;
+                const target = event.target;
+                if (target instanceof Element) {
+                    // campos de texto (chat do jogo, inputs do painel) ficam imunes
+                    if (/INPUT|TEXTAREA|SELECT/.test(target.tagName) || target.isContentEditable) return;
+                    // o painel de Configurações vive neste documento (é um <div>,
+                    // não iframe) — tecla com foco lá dentro não é atalho
+                    if (target.closest('#pokemon-settings-panel')) return;
+                }
+                const overlay = document.getElementById(ID);
+                if (!overlay) return;
+                // captura de atalho em andamento: onCaptureKey (settings-panel)
+                // também escuta o document em capture phase, mas registrado
+                // DEPOIS deste listener — consumir aqui impediria gravar uma
+                // tecla que já é atalho de outra ação
+                if (overlay.querySelector('.ph-key-btn.capturing')) return;
+                const action = actionForCombo(event);
+                if (!action) return;
+                // só consome a tecla quando a ação de fato aconteceu — senão
+                // atalhos como ESC/F com o painel colapsado (onde não fazem
+                // nada) viram teclas mortas pro jogo à toa
+                if (performAction(action)) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
+            }, true);
         }
 
         if (!window.__pkmnHelperPayloadListenerAdded) {
@@ -478,7 +551,7 @@
                 position: fixed; z-index: 2147483647;
                 display: flex; flex-direction: column;
                 background: #0d0d14; color: #e6e6f0;
-                font-family: 'Pixelify Sans', monospace;
+                font-family: 'Silkscreen', monospace;
                 border: 2px solid #23232f; border-radius: 0;
                 overflow: hidden; box-shadow: -8px 0 0 rgba(0,0,0,.35);
                 image-rendering: pixelated;
@@ -504,8 +577,8 @@
             #${ID} .ph-body { flex: 1; position: relative; min-height: 0; display: flex; }
             #${ID} .ph-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: none; }
             #${ID}.full-side .ph-frame { position: static; height: 100%; }
-            #${ID}.full-side #pokemon-chart-frame { display: block; flex: 1 1 auto; min-width: 0; order: 0; }
-            #${ID}.full-side .ph-frame.side-active { display: block; flex: 0 0 var(--ph-side-width, 360px); border-left: 2px solid #23232f; order: 1; }
+            #${ID}.full-side #pokemon-chart-frame { display: block; flex: 1 1 auto; min-width: 0; order: 1; }
+            #${ID}.full-side .ph-frame.side-active { display: block; flex: 0 0 var(--ph-side-width, 360px); border-right: 2px solid #23232f; order: 0; }
             #${ID} .ph-status {
                 flex: 0 0 auto; height: 22px;
                 display: flex; align-items: center; gap: 7px; padding: 0 8px;
@@ -543,7 +616,7 @@
             #${ID} .ph-set-head::after { content: ''; flex: 1; height: 1px; background: #1c1c26; }
             #${ID} .ph-setting-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
             #${ID} .ph-setting-row[hidden] { display: none; }
-            #${ID} .ph-setting-label { flex: 1; font-size: 15px; color: #c8c8dc; }
+            #${ID} .ph-setting-label { flex: 1; font-size: 12px; color: #c8c8dc; }
             #${ID} .ph-step { width: 26px; height: 24px; background: #16161f; border: 1px solid #2b2b39; color: #c8c8dc; font-family: 'Silkscreen', monospace; font-size: 11px; padding: 0; cursor: pointer; }
             #${ID} .ph-width-value { font-family: 'Silkscreen', monospace; font-size: 11px; color: #ffb545; width: 44px; text-align: center; }
             #${ID} .ph-toggle { position: relative; flex: 0 0 auto; width: 40px; height: 22px; padding: 0; border: 1px solid #2b2b39; border-radius: 0; background: #16161f; cursor: pointer; }
@@ -557,8 +630,8 @@
             #${ID} .ph-key-btn { cursor: pointer; min-width: 52px; }
             #${ID} .ph-key-btn.capturing { color: #0c0c11; background: #ffb545; border-color: #ffb545; }
             #${ID} .ph-shortcut-error { color: #e06c60; font-size: 12px; font-family: 'Silkscreen', monospace; min-height: 14px; margin: 0 0 8px; }
-            #${ID} .ph-key-desc { font-size: 15px; color: #8a8aa0; }
-            #${ID} .ph-hint { color: #8a8aa0; font-size: 13px; margin: 4px 0 12px; }
+            #${ID} .ph-key-desc { font-size: 12px; color: #8a8aa0; }
+            #${ID} .ph-hint { color: #8a8aa0; font-size: 11px; margin: 4px 0 12px; }
             #${ID} .ph-btn-shortcut { width: 100%; }
             #${ID} .ph-data-feedback { font-family: 'Silkscreen', monospace; font-size: 10px; min-height: 13px; margin: 6px 0 0; }
             #${ID} .ph-data-feedback.ok { color: #63bb5b; }
