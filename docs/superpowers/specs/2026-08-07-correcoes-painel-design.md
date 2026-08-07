@@ -1,9 +1,9 @@
-# Correções do painel: barras de IV, golpes do oponente, layout expandido e atalhos globais
+# Correções do painel: barras de IV, golpes do oponente, layout expandido, atalhos globais e fonte única
 
 **Data:** 2026-08-07
 **Status:** aprovado
 
-Quatro correções independentes reportadas em uso real, entregues numa branch
+Cinco correções independentes reportadas em uso real, entregues numa branch
 única (`fix/ajustes-painel`), um commit por item.
 
 ## 1. Barras de IV não preenchem
@@ -101,6 +101,38 @@ quiser reservar uma tecla para o jogo troca o atalho nas Configurações.
   para cliques no shell). Exceção: com a aba **Configurações** ativa o foco
   permanece no painel, porque ela tem inputs e a captura de tecla de atalho.
 
+## 5. Fonte única: Silkscreen para tudo
+
+**Problema:** o painel usa duas fontes embutidas em `pixel-theme.css` —
+Pixelify Sans (`--px-font-body`, texto e boa parte dos números: stats do
+grid de IVs, `meta-val`, `.row .value`) e Silkscreen (`--px-font-mono`,
+rótulos e números pequenos). Os dígitos da Pixelify Sans são difíceis de
+ler nos tamanhos do painel.
+
+**Decisão (usuário, após comparação visual):** usar Silkscreen para tudo —
+letras e números — aposentando a Pixelify Sans.
+
+**Correção:**
+
+- `pixel-theme.css`: `--px-font-body` passa a `'Silkscreen', monospace`
+  (o token `--px-font-mono` já é Silkscreen; os dois passam a coincidir,
+  mas ambos são mantidos para não tocar em todos os consumidores).
+- Varredura das referências diretas a `'Pixelify Sans'` fora do token —
+  `content.js` (estilo injetado do shell), `components/tooltip.js`,
+  `components/pokemon-filters.css` — trocando por `var(--px-font-body)`
+  (ou `'Silkscreen', monospace` onde a var não estiver disponível).
+- Remover o `@font-face` da Pixelify Sans (~12 KB de base64) quando nenhuma
+  referência sobrar.
+- **Passe de tamanhos:** a Silkscreen é mais larga que a Pixelify no mesmo
+  corpo — revisar visualmente os textos de 14–15px (valores, labels de
+  configurações, linhas de golpes) e reduzir o `font-size` onde estourar
+  o layout.
+- **Acentos:** o subset embutido da Silkscreen já renderiza maiúsculas
+  acentuadas (AVALIAÇÃO, POKÉBOLAS no painel atual). Verificar as
+  minúsculas usadas pelo texto corrido (Médio, Físico, Precisão, Evasão);
+  se faltar glifo, re-embutir a Silkscreen com subset latino completo, no
+  mesmo padrão base64 dos @font-face atuais.
+
 ## Fora de escopo
 
 - Migração dos atalhos padrão para combos com modificador (Alt+E etc.).
@@ -118,4 +150,8 @@ Carregar a extensão descompactada em `infinitymmo.net` e conferir:
    painel e o jogo não reage à tecla; após clicar em botões do painel, o
    jogo volta a responder ao teclado sem clique extra; digitar no chat do
    jogo não aciona atalhos; captura de atalho nas Configurações continua
-   funcionando.
+   funcionando;
+5. todo o painel (batalha, calculadora, Meus Pokémon, configurações,
+   tooltips) renderiza em Silkscreen, sem sobras de Pixelify Sans; textos
+   acentuados em minúsculas (Médio, Físico, Precisão) aparecem corretos;
+   nenhum valor estoura seu contêiner nos tamanhos ajustados.
