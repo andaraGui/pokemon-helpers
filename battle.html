@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="pixel-theme.css">
     <link rel="stylesheet" href="components/nature-effect.css">
     <link rel="stylesheet" href="components/update-notice.css">
-    <link rel="stylesheet" href="components/ability-info.css">
     <link rel="stylesheet" href="components/type-tag.css">
     <style>
         * { box-sizing: border-box; }
@@ -25,6 +24,7 @@
             display: flex; align-items: center; justify-content: center;
             font-family: var(--px-font-mono); font-size: 7px; color: #4a4a5c;
         }
+        img.enc-sprite { object-fit: contain; padding: 2px; }
         .enc-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
         .enc-name-row { display: flex; align-items: baseline; gap: 6px; }
         .enc-name { font-family: var(--px-font-mono); font-size: 15px; font-weight: 700; color: var(--px-text-hi); letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
@@ -99,8 +99,8 @@
         <p class="empty">Nenhum encontro capturado ainda. Entre em uma batalha selvagem.</p>
     </div>
     <script src="data/extension-storage.js"></script>
+    <script src="data/constants.js"></script>
     <script src="components/tooltip.js"></script>
-    <script>PokemonHelperTooltip.attach(document);</script>
     <script src="components/update-notice.js"></script>
     <script src="components/nature-effect.js"></script>
     <script src="components/ability-info.js"></script>

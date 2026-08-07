@@ -12,6 +12,9 @@ let pokedexBySlug = new Map();
 let trainerMovesByKey = new Map();
 let discoveredMovesByKey = new Map();
 const openMoves = new Set();
+// golpes que causam dano começam expandidos (uma única vez por slug — depois
+// disso a escolha do usuário de fechar/abrir é respeitada)
+const autoExpandedMoves = new Set();
 
 const escapeHtml = (value) => String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 const normalizeSpecies = (value) => String(value || '').trim().toLowerCase().replace(/[.']/g, '').replace(/[\s-]+/g, '_');
@@ -54,7 +57,7 @@ function bestPlay(foe) {
         ? `<span class="best-badge ${multClass(best.multiplier)}" data-tip="${best.multiplier > 1 ? 'Super eficaz' : 'Pouco eficaz'} contra o oponente.">${multLabel(best.multiplier)}</span>`
         : '';
     return `<div class="best-box">
-        <div class="best-head" data-tip="Melhor combinação de Pokémon e golpe do seu time contra este oponente (potência × precisão × eficácia × STAB × ataque).">MELHOR JOGADA</div>
+        <div class="best-head">MELHOR JOGADA ${PokemonHelperTooltip.iconHTML('Melhor combinação de Pokémon e golpe do seu time contra este oponente (potência × precisão × eficácia × STAB × ataque).')}</div>
         <div class="best-row">
             <div class="best-detail">
                 <div class="best-mon">${escapeHtml(best.pokemon.name || best.pokemon.species)} — slot ${best.index + 1}</div>
@@ -285,7 +288,7 @@ function renderWeaknesses(foe) {
     const chips = weak.map(({ type, value }) =>
         typeTagHTML(type, { title: `${LABELS[type]} causa ${multLabel(value)} de dano nele.` })).join('');
     return `<div class="section">
-        <div class="section-head" data-tip="Tipos que causam dano extra nele. Resistências e imunidades ficam de fora."><span class="px-label">FRAQUEZAS DELE</span></div>
+        <div class="section-head"><span class="px-label">FRAQUEZAS DELE</span>${PokemonHelperTooltip.iconHTML('Tipos que causam dano extra nele. Resistências e imunidades ficam de fora.')}</div>
         <div class="chip-row">${chips}</div>
     </div>`;
 }
@@ -304,6 +307,10 @@ function renderFoeMoves(foe) {
         + (resolved.source === 'discovered' && resolved.seenCount < 4 ? ` (${resolved.seenCount}/4 vistos até agora)` : '');
     const items = resolved.moves.map((move) => {
         const isStatus = STATUS_MOVES.has(move.slug);
+        if (!isStatus && !autoExpandedMoves.has(move.slug)) {
+            autoExpandedMoves.add(move.slug);
+            openMoves.add(move.slug);
+        }
         const open = openMoves.has(move.slug);
         const typeBg = PokemonPixelIcons.typeColor(move.type);
         const fg = PokemonPixelIcons.onColor(typeBg);
@@ -334,7 +341,7 @@ function renderFoeMoves(foe) {
         </div>`;
     }).join('');
     return `<div class="section">
-        <div class="section-head" data-tip="${escapeHtml(sourceHint)}"><span class="px-label">GOLPES DELE</span></div>
+        <div class="section-head"><span class="px-label">GOLPES DELE</span>${PokemonHelperTooltip.iconHTML(sourceHint)}</div>
         ${items}
     </div>`;
 }
@@ -365,6 +372,21 @@ function renderBalls(foe) {
         '</div></div>';
 }
 
+// sprite do oponente: mesma arte (PokeAPI dream-world) usada em Meus Pokémon;
+// POKEMON_NAME_TO_ID casa por nome de exibição, então tentamos name e species
+// (inclusive com _/- viram espaço) antes de cair no placeholder
+const SPRITE_URL = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/';
+function foeSpriteId(foe) {
+    if (typeof POKEMON_NAME_TO_ID === 'undefined') return null;
+    for (const value of [foe.name, foe.species]) {
+        if (!value) continue;
+        const key = String(value).trim().toLowerCase();
+        const id = POKEMON_NAME_TO_ID[key] || POKEMON_NAME_TO_ID[key.replace(/[_-]+/g, ' ')];
+        if (id) return id;
+    }
+    return null;
+}
+
 function render() {
     const content = document.getElementById('content'), foe = state.foe;
     if (!foe) { content.innerHTML = '<p class="empty">Nenhum encontro capturado ainda. Entre em uma batalha selvagem.</p>'; return; }
@@ -379,8 +401,12 @@ function render() {
             ? '<span class="enc-gender-m">♂</span>'
             : '';
 
+    const spriteId = foeSpriteId(foe);
+    const sprite = spriteId
+        ? `<img class="enc-sprite" src="${SPRITE_URL}${spriteId}.svg" alt="${escapeHtml(foe.name || foe.species)}">`
+        : '<div class="enc-sprite">?</div>';
     const head = `<div class="enc-head">
-        <div class="enc-sprite">SPRITE</div>
+        ${sprite}
         <div class="enc-id">
             <div class="enc-name-row">
                 <span class="enc-name">${escapeHtml(foe.name || foe.species)}</span>
@@ -426,6 +452,14 @@ function render() {
         state.moves.map((move) => `<div class="row"><span class="label">${escapeHtml(move.name)}</span><span class="value">${move.pp} PP</span></div>`).join('') + '</div></div>';
     html += `</div>`;
     content.innerHTML = html;
+    // sprite pode não existir no repositório (formas regionais etc.) — volta
+    // pro placeholder em vez de mostrar o ícone de imagem quebrada
+    content.querySelectorAll('img.enc-sprite').forEach((img) => img.addEventListener('error', () => {
+        const fallback = document.createElement('div');
+        fallback.className = 'enc-sprite';
+        fallback.textContent = '?';
+        img.replaceWith(fallback);
+    }));
     PokemonAbilityInfo.hydrate(content);
 }
 
