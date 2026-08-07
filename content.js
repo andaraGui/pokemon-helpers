@@ -504,8 +504,8 @@
             #${ID} .ph-body { flex: 1; position: relative; min-height: 0; display: flex; }
             #${ID} .ph-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: none; }
             #${ID}.full-side .ph-frame { position: static; height: 100%; }
-            #${ID}.full-side #pokemon-chart-frame { display: block; flex: 1 1 auto; min-width: 0; order: 0; }
-            #${ID}.full-side .ph-frame.side-active { display: block; flex: 0 0 var(--ph-side-width, 360px); border-left: 2px solid #23232f; order: 1; }
+            #${ID}.full-side #pokemon-chart-frame { display: block; flex: 1 1 auto; min-width: 0; order: 1; }
+            #${ID}.full-side .ph-frame.side-active { display: block; flex: 0 0 var(--ph-side-width, 360px); border-right: 2px solid #23232f; order: 0; }
             #${ID} .ph-status {
                 flex: 0 0 auto; height: 22px;
                 display: flex; align-items: center; gap: 7px; padding: 0 8px;
