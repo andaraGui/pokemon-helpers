@@ -46,6 +46,10 @@
         const settings = Object.assign({}, DEFAULT_SETTINGS, storedSettings);
         if (mode === 'ensure' && settings.open === false) return;
         settings.open = true;
+        // preferências de abertura: 'last'/'remember' preservam o comportamento
+        // atual (usa o que está persistido em overlaySettings)
+        if (prefs.startView !== 'last') settings.view = prefs.startView;
+        if (prefs.startCollapsed !== 'remember') settings.collapsed = prefs.startCollapsed === 'collapsed';
         build(settings);
     }).catch((error) => {
         if (mode === 'ensure') window.__pkmnHelperEnsurePending = false;
@@ -431,6 +435,9 @@
                         clearTimeout(battleReturnTimer);
                         battleReturnTimer = null;
                     }
+                    // usuário pode desligar a troca automática pra aba Encontro;
+                    // sem preBattleView setado, o retorno automático também não roda
+                    if (uiPrefs().autoSwitchToBattle === false) return;
                     if (overlay.dataset.activeView !== 'battle' && !overlay.dataset.preBattleView) {
                         overlay.dataset.preBattleView = overlay.dataset.activeView || 'calc';
                     }
