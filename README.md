@@ -85,18 +85,38 @@ e recarregue a página do jogo.
 
 1. Clique no ícone da extensão (ou use `Ctrl+Shift+Y`, configurável em
    `chrome://extensions/shortcuts`) para abrir ou fechar o overlay.
-2. Navegue pelas abas disponíveis:
-   - **Calculadora (🧮):** compara matchups ofensivos e defensivos entre tipos
-     simples ou combinações de dois tipos;
-   - **Tabela de tipos (📊):** consulta a efetividade completa e permite
-     filtrar tipos e combinações;
-   - **Encontro (⚔️):** mostra em tempo real o Pokémon adversário, HP, Nature,
+2. Navegue pelas 4 abas do painel, cada uma com seu ícone pixelado no
+   cabeçalho:
+   - **Encontro:** mostra em tempo real o Pokémon adversário, HP, Nature,
      tipos, stats e IVs;
-   - **Meus Pokémon (🖥️):** exibe a Party e as caixas do PC, com cards
+   - **Calculadora:** compara matchups ofensivos e defensivos entre tipos
+     simples ou combinações de dois tipos;
+   - **Meus Pokémon:** exibe a Party e as caixas do PC, com cards
      expansíveis, IVs, golpes, busca, ordenação e filtros avançados;
-   - **Configurações (⚙️):** permite configurar o atalho e ativar avisos de
-     atualização para os canais estável (`main`) ou beta (`develop`).
-3. Algumas informações dependem dos dados enviados pelo jogo e aparecem
+   - **Configurações:** ajusta a largura do painel, os avisos de
+     atualização (canais estável `main`/beta `develop`), os tooltips e
+     lista os atalhos de teclado.
+
+   A tabela de tipos completa fica junto da Calculadora — veja "modo
+   full" abaixo.
+3. No cabeçalho, além das abas, há os botões de expandir (ícone de
+   tabela) e minimizar (`_`), e uma barra de status com um ponto verde
+   piscando quando o painel está conectado ao jogo.
+4. Atalhos de teclado (valem com o mouse/foco sobre o painel, não na
+   página do jogo): `E` Encontro, `C` Calculadora, `M` Meus Pokémon, `,`
+   (vírgula) Configurações, `F` expandir/tabela completa, `Esc`
+   minimizar/voltar.
+5. **Modo full** (botão de expandir ou `F`): o painel ocupa 90% da
+   largura da janela. Na Calculadora e no Encontro, a tabela de tipos
+   completa aparece ao lado do conteúdo; em Meus Pokémon, a tela vira
+   uma grade larga com os cards expandidos. Pressione `Esc`, o próprio
+   botão de expandir novamente, ou o botão **VOLTAR** da tabela pra
+   sair e voltar ao tamanho anterior.
+6. Na aba Configurações: o stepper de largura (`-`/`+`) ajusta o painel
+   encaixado entre 250 e 380px; o toggle de tooltips liga/desliga as
+   dicas ao passar o mouse em todas as telas (útil pra não atrapalhar
+   durante a batalha).
+7. Algumas informações dependem dos dados enviados pelo jogo e aparecem
    depois que o personagem ou uma batalha é sincronizada.
 
 Toda alteração de código bumpa a versão em `manifest.json`, pra confirmar

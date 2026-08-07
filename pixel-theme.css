@@ -122,10 +122,13 @@
 
 
 /* ---------------------------------------------------------------------
-   Pixel Theme — reusable 8-bit / Pokemon-style UI components
-   (buttons, icons, badges, dialogue panels, HP gauges).
-   Namespaced with "pxl-" so it can be mixed into any existing panel.
-   Palette matches the app's dark theme (bg/panel/accent/good/bad).
+   Pixel Theme (legado) — restam apenas as classes "pxl-" ainda em uso
+   por componentes que não foram migrados pro visual v2/px-*:
+   .pxl-btn/.pxl-btn-sm/.pxl-input (components/pokemon-filters.js, via
+   overrides escopados em pokemon-filters.css), .pxl-bubble (content.js)
+   e .pxl-pokeball (myPokemons.js). O restante do tema legado (badges,
+   painel, dialogue box, HP gauge, ícones) foi removido na task 9 por
+   não ter mais consumidores.
 --------------------------------------------------------------------- */
 
 @font-face {
@@ -144,10 +147,7 @@
 :root {
     --pxl-fs-2xs: 0.5rem;   /* números densos de tabela, notas aninhadas */
     --pxl-fs-xs: 0.58rem;   /* legendas/rótulos em caixa alta (h2 de painel, headers) */
-    --pxl-fs-sm: 0.64rem;   /* texto de corpo/descrição (subtítulo, hints, tags) */
-    --pxl-fs-base: 0.7rem;  /* controles interativos (botões, badges, inputs) */
-    --pxl-fs-md: 0.8rem;    /* texto de destaque (título de página secundária) */
-    --pxl-fs-lg: 0.95rem;   /* título principal (h1) */
+    --pxl-fs-base: 0.7rem;  /* controles interativos (botões, inputs) */
 
     /* cores de tipo — usadas pelo componente de tag/pill (components/type-tag.js) */
     --t-normal: #9a9a80;
@@ -170,19 +170,9 @@
     --t-fairy: #ee90c0;
 }
 
-:where(.pxl-heading, .pxl-btn, .pxl-icon-btn, .pxl-badge, .pxl-toggle, .pxl-hp-label) {
-    font-family: 'Press Start 2P', 'Courier New', ui-monospace, monospace;
-}
-
-.pxl-heading {
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    line-height: 1.6;
-    text-shadow: 2px 2px 0 #000;
-}
-
 /* ---- buttons ---- */
 .pxl-btn {
+    font-family: 'Press Start 2P', 'Courier New', ui-monospace, monospace;
     text-transform: uppercase;
     letter-spacing: 0.02em;
     font-size: var(--pxl-fs-base);
@@ -213,24 +203,6 @@
     filter: none;
 }
 
-.pxl-btn-accent {
-    background: #ffb238;
-    color: #1a1408;
-    border-color: #7a4f00;
-}
-
-.pxl-btn-good {
-    background: #57c785;
-    color: #06210f;
-    border-color: #1f5c37;
-}
-
-.pxl-btn-bad {
-    background: #e2637a;
-    color: #2c0810;
-    border-color: #7a1b2a;
-}
-
 .pxl-btn-sm {
     padding: 8px 9px;
     font-size: var(--pxl-fs-2xs);
@@ -240,56 +212,6 @@
 
 .pxl-btn-sm:active:not(:disabled) {
     transform: translate(2px, 2px);
-}
-
-/* ---- square icon button (toolbar / header icons) ---- */
-.pxl-icon-btn {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: 2px solid #000;
-    border-radius: 0;
-    background: #21242f;
-    color: #9198ab;
-    box-shadow: 2px 2px 0 0 #000;
-    font-size: 15px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 0;
-    transition: transform .05s linear, box-shadow .05s linear, color .1s linear, background .1s linear;
-}
-
-.pxl-icon-btn:hover {
-    color: #e8e9ee;
-    background: #2c303e;
-}
-
-.pxl-icon-btn:active {
-    transform: translate(2px, 2px);
-    box-shadow: 0 0 0 0 #000;
-}
-
-.pxl-icon-btn.active {
-    color: #1a1408;
-    background: #ffb238;
-    border-color: #7a4f00;
-}
-
-/* classic in-game menu cursor: a little triangle pointing at the active item */
-.pxl-icon-btn.active::before {
-    content: '';
-    position: absolute;
-    left: -1px;
-    top: 50%;
-    width: 0;
-    height: 0;
-    border-top: 4px solid transparent;
-    border-bottom: 4px solid transparent;
-    border-left: 5px solid #1a1408;
-    transform: translate(-100%, -50%);
 }
 
 /* ---- round pixel bubble (hard-edged corners via clip-path) ---- */
@@ -308,82 +230,6 @@
         20% 0%, 80% 0%, 100% 20%, 100% 80%,
         80% 100%, 20% 100%, 0% 80%, 0% 20%
     );
-}
-
-/* ---- panel frame with pixel-cut corners ---- */
-.pxl-panel {
-    background: #1c1f28;
-    border: 3px solid #000;
-    box-shadow: 4px 4px 0 0 #000, inset 0 0 0 2px #454b5e;
-    border-radius: 0;
-    padding: 16px;
-}
-
-/* Game Boy-style dialogue box: pale panel, thick black border, blue inner rule */
-.pxl-dialogue {
-    background: #f8f8f0;
-    color: #1a1a1a;
-    border: 3px solid #000;
-    box-shadow: 0 0 0 2px #f8f8f0, 0 0 0 5px #3868b0, 4px 4px 0 0 #000;
-    border-radius: 0;
-    padding: 14px 16px;
-}
-
-/* ---- small badge/tag, e.g. status labels, shiny indicator ---- */
-.pxl-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border: 2px solid #000;
-    border-radius: 0;
-    background: #21242f;
-    color: #e8e9ee;
-    font-size: var(--pxl-fs-base);
-    letter-spacing: 0.02em;
-    box-shadow: 2px 2px 0 0 #000;
-}
-
-.pxl-badge-accent {
-    background: #ffb238;
-    color: #1a1408;
-}
-
-.pxl-badge-good {
-    background: #57c785;
-    color: #06210f;
-}
-
-.pxl-badge-bad {
-    background: #e2637a;
-    color: #2c0810;
-}
-
-/* ---- pixel checkbox / toggle pill ---- */
-.pxl-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 10px;
-    border: 2px solid #000;
-    border-radius: 0;
-    background: #21242f;
-    color: #9198ab;
-    font-size: var(--pxl-fs-base);
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    box-shadow: 2px 2px 0 0 #000;
-    user-select: none;
-}
-
-.pxl-toggle input {
-    display: none;
-}
-
-.pxl-toggle:has(input:checked) {
-    background: #ffb238;
-    color: #1a1408;
-    border-color: #7a4f00;
 }
 
 /* ---- text/number inputs ---- */
@@ -421,35 +267,3 @@
     vertical-align: middle;
     flex: 0 0 auto;
 }
-
-/* ---- HP gauge, styled after the in-battle health bar ---- */
-.pxl-hp {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.pxl-hp-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: var(--pxl-fs-2xs);
-    color: #9198ab;
-    letter-spacing: 0.02em;
-}
-
-.pxl-hp-track {
-    height: 10px;
-    background: #000;
-    border: 2px solid #000;
-    box-shadow: 0 0 0 1px #454b5e;
-    padding: 1px;
-}
-
-.pxl-hp-fill {
-    height: 100%;
-    background: #57c785;
-    transition: width .2s linear, background-color .2s linear;
-}
-
-.pxl-hp[data-level="mid"] .pxl-hp-fill { background: #f7d02c; }
-.pxl-hp[data-level="low"] .pxl-hp-fill { background: #e2637a; }
