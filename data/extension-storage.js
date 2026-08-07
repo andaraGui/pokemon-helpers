@@ -42,7 +42,34 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
     });
 
     const DEFAULT_UI_PREFERENCES = Object.freeze({
-        tooltipsEnabled: true
+        tooltipsEnabled: true,
+        startView: 'last',            // 'last' | 'battle' | 'calc' | 'myPokemons'
+        startCollapsed: 'remember',   // 'remember' | 'collapsed' | 'open'
+        autoSwitchToBattle: true,
+        // ação → combinação normalizada (ver PokemonHelperShortcutUtils)
+        shortcuts: Object.freeze({
+            battle: 'e',
+            calc: 'c',
+            myPokemons: 'm',
+            settings: ',',
+            typeChart: 't',
+            toggleFull: 'f',
+            minimize: 'escape'
+        }),
+        screens: Object.freeze({
+            myPokemons: Object.freeze({
+                expandPokemonByDefault: false,
+                expandGroupsByDefault: true
+            }),
+            battle: Object.freeze({
+                showStatChanges: true,
+                showWeaknesses: true,
+                showFoeMoves: true,
+                showPokeballs: true,
+                showIvs: true,
+                showMyMoves: true
+            })
+        })
     });
 
     function read(key, defaults) {
@@ -76,6 +103,38 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         return write(key, Object.assign(current, changes));
     }
 
+    // uiPreferences tem objetos aninhados (shortcuts, screens) — o merge raso
+    // de read() substituiria o objeto inteiro pelo salvo, e uma versão futura
+    // que adicionasse uma ação/tela nova deixaria configs antigas sem o campo.
+    function mergeUiPreferences(stored) {
+        const prefs = Object.assign({}, DEFAULT_UI_PREFERENCES, stored);
+        prefs.shortcuts = Object.assign({}, DEFAULT_UI_PREFERENCES.shortcuts, stored && stored.shortcuts);
+        prefs.screens = {};
+        Object.keys(DEFAULT_UI_PREFERENCES.screens).forEach((screen) => {
+            prefs.screens[screen] = Object.assign({},
+                DEFAULT_UI_PREFERENCES.screens[screen],
+                stored && stored.screens && stored.screens[screen]);
+        });
+        return prefs;
+    }
+
+    function getUiPreferencesDeep() {
+        return read(KEYS.uiPreferences, {}).then(mergeUiPreferences);
+    }
+
+    async function updateUiPreferences(changes) {
+        const current = await getUiPreferencesDeep();
+        const next = Object.assign({}, current, changes);
+        if (changes.shortcuts) next.shortcuts = Object.assign({}, current.shortcuts, changes.shortcuts);
+        if (changes.screens) {
+            next.screens = {};
+            Object.keys(current.screens).forEach((screen) => {
+                next.screens[screen] = Object.assign({}, current.screens[screen], changes.screens[screen]);
+            });
+        }
+        return write(KEYS.uiPreferences, next);
+    }
+
     return Object.freeze({
         KEYS,
         DEFAULT_OVERLAY_SETTINGS,
@@ -88,8 +147,8 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         setUpdatePreferences: (changes) => update(KEYS.updatePreferences, DEFAULT_UPDATE_PREFERENCES, changes),
         getUpdateStatus: () => read(KEYS.updateStatus, DEFAULT_UPDATE_STATUS),
         setUpdateStatus: (status) => write(KEYS.updateStatus, Object.assign({}, DEFAULT_UPDATE_STATUS, status)),
-        getUiPreferences: () => read(KEYS.uiPreferences, DEFAULT_UI_PREFERENCES),
-        setUiPreferences: (changes) => update(KEYS.uiPreferences, DEFAULT_UI_PREFERENCES, changes),
+        getUiPreferences: getUiPreferencesDeep,
+        setUiPreferences: updateUiPreferences,
         getAbilities: () => read(KEYS.abilities, { items: [], checkedAt: null, error: null }),
         setAbilities: (value) => write(KEYS.abilities, value),
         getPokedex: () => read(KEYS.pokedex, { items: [], checkedAt: null, error: null }),
