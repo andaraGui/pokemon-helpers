@@ -93,8 +93,9 @@
 .px-toggle[aria-checked="true"] { background: #3f8f5a; justify-content: flex-end; }
 .px-toggle[aria-checked="true"]::after { background: var(--px-on-dark); }
 
-.px-bar { height: 5px; background: var(--px-bg-track); }
-.px-bar-fill { height: 100%; }
+.px-bar { display: block; height: 5px; background: var(--px-bg-track); }
+/* span inline ignora width/height — sem display block o preenchimento não renderiza */
+.px-bar-fill { display: block; height: 100%; }
 
 /* grade da avaliação de IVs (PokemonIvEvaluation.html) — usada tanto em
    myPokemons.html (card do Pokémon) quanto em battle.js (avaliação do
