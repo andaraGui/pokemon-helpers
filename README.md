@@ -136,8 +136,9 @@ A aba **Configurações** tem cinco blocos:
     anterior), `MINIMIZADO` e `ABERTO`: define se o painel começa
     encaixado/expandido ou como bolha minimizada ao carregar a página.
   - **Auto-troca no encontro** — liga/desliga a troca automática pra
-    aba Encontro quando uma batalha começa (o sync passivo de
-    party/PC nunca troca de aba sozinho, com ou sem esse toggle).
+    aba Encontro quando uma batalha começa (o sync passivo de party/PC
+    pode continuar trocando de Calculadora pra Meus Pokémon sozinho,
+    independente desse toggle — ele controla só a troca pra Encontro).
 - **TELAS:** toggles específicos por tela, aplicados ao vivo:
   - *Meus Pokémon:* grupos já expandidos e Pokémon já expandidos (o
     estado inicial dos cards ao abrir a tela).
@@ -162,8 +163,9 @@ A aba **Configurações** tem cinco blocos:
     (largura, comportamento, toggles, atalhos, avisos de atualização) —
     nunca pokédex ou golpes descobertos.
   - **Importar configurações** troca um arquivo desse formato e
-    substitui as configurações atuais pelas dele; um arquivo inválido
-    ou de outro formato é recusado sem tocar em nada.
+    mescla os campos conhecidos presentes nele nas configurações
+    atuais (o que não aparece no arquivo mantém o valor atual); um
+    arquivo inválido ou de outro formato é recusado sem tocar em nada.
   - **Restaurar tudo** pede confirmação e devolve todas as
     configurações (painel, comportamento, telas, atalhos) ao padrão de
     fábrica.
