@@ -530,7 +530,7 @@
                 position: fixed; z-index: 2147483647;
                 display: flex; flex-direction: column;
                 background: #0d0d14; color: #e6e6f0;
-                font-family: 'Pixelify Sans', monospace;
+                font-family: 'Silkscreen', monospace;
                 border: 2px solid #23232f; border-radius: 0;
                 overflow: hidden; box-shadow: -8px 0 0 rgba(0,0,0,.35);
                 image-rendering: pixelated;
@@ -595,7 +595,7 @@
             #${ID} .ph-set-head::after { content: ''; flex: 1; height: 1px; background: #1c1c26; }
             #${ID} .ph-setting-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
             #${ID} .ph-setting-row[hidden] { display: none; }
-            #${ID} .ph-setting-label { flex: 1; font-size: 15px; color: #c8c8dc; }
+            #${ID} .ph-setting-label { flex: 1; font-size: 12px; color: #c8c8dc; }
             #${ID} .ph-step { width: 26px; height: 24px; background: #16161f; border: 1px solid #2b2b39; color: #c8c8dc; font-family: 'Silkscreen', monospace; font-size: 11px; padding: 0; cursor: pointer; }
             #${ID} .ph-width-value { font-family: 'Silkscreen', monospace; font-size: 11px; color: #ffb545; width: 44px; text-align: center; }
             #${ID} .ph-toggle { position: relative; flex: 0 0 auto; width: 40px; height: 22px; padding: 0; border: 1px solid #2b2b39; border-radius: 0; background: #16161f; cursor: pointer; }
@@ -609,8 +609,8 @@
             #${ID} .ph-key-btn { cursor: pointer; min-width: 52px; }
             #${ID} .ph-key-btn.capturing { color: #0c0c11; background: #ffb545; border-color: #ffb545; }
             #${ID} .ph-shortcut-error { color: #e06c60; font-size: 12px; font-family: 'Silkscreen', monospace; min-height: 14px; margin: 0 0 8px; }
-            #${ID} .ph-key-desc { font-size: 15px; color: #8a8aa0; }
-            #${ID} .ph-hint { color: #8a8aa0; font-size: 13px; margin: 4px 0 12px; }
+            #${ID} .ph-key-desc { font-size: 12px; color: #8a8aa0; }
+            #${ID} .ph-hint { color: #8a8aa0; font-size: 11px; margin: 4px 0 12px; }
             #${ID} .ph-btn-shortcut { width: 100%; }
             #${ID} .ph-data-feedback { font-family: 'Silkscreen', monospace; font-size: 10px; min-height: 13px; margin: 6px 0 0; }
             #${ID} .ph-data-feedback.ok { color: #63bb5b; }
