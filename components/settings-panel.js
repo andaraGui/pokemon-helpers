@@ -2,7 +2,7 @@
 // Painel "Configurações" do overlay (content.js): largura do painel encaixado,
 // avisos de atualização/beta, tooltips e atalhos. Não tem acesso ao closure
 // de content.js — recebe tudo que precisa (leitura/gravação de settings,
-// acesso ao container do overlay, prefs vivas) via objeto `shell`.
+// acesso ao container do overlay) via objeto `shell`.
 // ---------------------------------------------------------------------------
 
 function buildSettingsPanel(shell) {
@@ -126,14 +126,30 @@ function buildSettingsPanel(shell) {
             capturing.btn.classList.remove('capturing');
             capturing = null; // síncrono: uma captura nova iniciada logo em seguida nunca é apagada por este reset
             document.removeEventListener('keydown', onCaptureKey, true);
+            document.removeEventListener('pointerdown', onCapturePointerDown, true);
             const token = ++captureToken;
             PokemonHelperStorage.getUiPreferences()
                 .then((prefs) => { if (token === captureToken) renderShortcutGrid(prefs.shortcuts); })
                 .catch(() => {});
         }
 
+        // qualquer clique fora do botão em captura cancela — inclusive fora do
+        // painel (página do jogo) ou fora do container (ícone do cabeçalho,
+        // que troca de view): o listener fica no document da página top-level
+        // em vez de só no `panel`, então nada escapa ao alcance dele.
+        function onCapturePointerDown(event) {
+            if (!capturing || capturing.btn.contains(event.target)) return;
+            shortcutError.textContent = '';
+            stopCapture();
+        }
+
         function onCaptureKey(event) {
             if (!capturing) return;
+            // o container pode ter sido removido do DOM sem passar por
+            // stopCapture (ex.: desligar a extensão pelo ícone) — sem essa
+            // checagem, o keydown seguinte em qualquer lugar da página seria
+            // engolido e salvo como atalho novo por um botão que não existe mais
+            if (!capturing.btn.isConnected) { stopCapture(); return; }
             event.preventDefault();
             event.stopPropagation();
             if (event.key === 'Escape') { shortcutError.textContent = ''; stopCapture(); return; }
@@ -167,10 +183,7 @@ function buildSettingsPanel(shell) {
             btn.textContent = '...';
             shortcutError.textContent = '';
             document.addEventListener('keydown', onCaptureKey, true);
-        });
-        // clicar em qualquer lugar fora do botão em captura cancela
-        panel.addEventListener('click', (event) => {
-            if (capturing && !event.target.closest('.ph-key-btn')) stopCapture();
+            document.addEventListener('pointerdown', onCapturePointerDown, true);
         });
 
         panel.querySelector('#ph-shortcut-reset').addEventListener('click', () => {
@@ -227,6 +240,34 @@ function buildSettingsPanel(shell) {
             return out;
         }
 
+        const START_VIEW_VALUES = ['last', 'battle', 'calc', 'myPokemons'];
+        const START_COLLAPSED_VALUES = ['remember', 'collapsed', 'open'];
+
+        // pickKnown só garante tipo — não garante que o valor seja um dos
+        // válidos pro enum (deixaria o cycle button sem opção que bata, e
+        // setActiveView() sem view pra mostrar) nem que os atalhos importados
+        // sejam únicos entre si (o guard de duplicata só existe na UI de
+        // captura). Roda depois do pickKnown, antes de qualquer gravação;
+        // campos removidos aqui mantêm o valor atual via merge do storage.
+        function sanitizeUiPreferences(ui) {
+            if (!ui) return ui;
+            if ('startView' in ui && !START_VIEW_VALUES.includes(ui.startView)) delete ui.startView;
+            if ('startCollapsed' in ui && !START_COLLAPSED_VALUES.includes(ui.startCollapsed)) delete ui.startCollapsed;
+            if (ui.shortcuts) {
+                const seenCombos = new Set();
+                const cleanShortcuts = {};
+                SHORTCUT_ACTIONS.forEach(([action]) => {
+                    const combo = ui.shortcuts[action];
+                    if (typeof combo !== 'string' || !combo) return; // vazio/tipo errado: dropa
+                    if (seenCombos.has(combo)) return; // duplicata: mantém só a primeira na ordem canônica
+                    seenCombos.add(combo);
+                    cleanShortcuts[action] = combo;
+                });
+                ui.shortcuts = cleanShortcuts;
+            }
+            return ui;
+        }
+
         panel.querySelector('#ph-import').addEventListener('click', () => panel.querySelector('#ph-import-file').click());
         panel.querySelector('#ph-import-file').addEventListener('change', async (event) => {
             const file = event.target.files[0];
@@ -238,7 +279,7 @@ function buildSettingsPanel(shell) {
             try {
                 const parsed = JSON.parse(await file.text());
                 if (!parsed || parsed.pokemonHelperConfig !== 1) throw new Error('formato desconhecido');
-                const ui = pickKnown(PokemonHelperStorage.DEFAULT_UI_PREFERENCES, parsed.uiPreferences);
+                const ui = sanitizeUiPreferences(pickKnown(PokemonHelperStorage.DEFAULT_UI_PREFERENCES, parsed.uiPreferences));
                 const updatePrefs = pickKnown(PokemonHelperStorage.DEFAULT_UPDATE_PREFERENCES, parsed.updatePreferences);
                 const overlay = pickKnown(PokemonHelperStorage.DEFAULT_OVERLAY_SETTINGS, parsed.overlaySettings);
                 writesStarted = true;

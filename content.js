@@ -134,7 +134,7 @@
         const settingsPanel = buildSettingsPanel({
             getContainer: () => document.getElementById(ID),
             dockedWidth, clampNum, applyBox, syncFullSide,
-            updateStatus, persist, currentSettings, uiPrefs
+            updateStatus, persist, currentSettings
         });
 
         // syncFullSide (chamado no build()) roda ANTES desses iframes
