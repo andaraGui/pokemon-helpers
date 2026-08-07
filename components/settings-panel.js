@@ -107,9 +107,12 @@ function buildSettingsPanel(shell) {
             const paint = () => { btn.textContent = options[index].label; };
             paint();
             btn.addEventListener('click', () => {
+                const previousIndex = index;
                 index = (index + 1) % options.length;
                 paint();
                 save(options[index].value).catch((error) => {
+                    index = previousIndex;
+                    paint();
                     console.warn('[Pokemon Helper] Não foi possível salvar a preferência:', error);
                 });
             });
