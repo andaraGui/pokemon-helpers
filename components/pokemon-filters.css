@@ -1,7 +1,7 @@
 .pokemon-advanced-filters {
     padding: 14px;
-    border: 2px solid #2e3240;
-    background: #1c1f28;
+    border: 1px solid var(--px-line);
+    background: var(--px-bg-card);
 }
 
 .pokemon-filter-grid,
@@ -20,7 +20,8 @@
 
 .filter-field > span,
 .pokemon-filter-section legend {
-    color: #9198ab;
+    color: var(--px-text-dim);
+    font-family: var(--px-font-mono);
     font-size: var(--pxl-fs-xs);
     font-weight: 700;
     text-transform: uppercase;
@@ -38,8 +39,8 @@
     align-self: end;
     min-height: 34px;
     padding: 6px 9px;
-    border: 2px solid #000;
-    background: #21242f;
+    border: 1px solid var(--px-border);
+    background: var(--px-bg-btn2);
 }
 
 .filter-toggle-control input {
@@ -48,8 +49,8 @@
     height: 18px;
     margin: 0;
     appearance: none;
-    border: 2px solid #000;
-    background: #2e3240;
+    border: 1px solid var(--px-border);
+    background: var(--px-line);
 }
 
 .filter-toggle-control input::after {
@@ -59,7 +60,7 @@
     left: 2px;
     width: 10px;
     height: 10px;
-    background: #9198ab;
+    background: var(--px-text-dim);
 }
 
 .filter-toggle-control input:checked {
@@ -67,7 +68,7 @@
 }
 
 .filter-toggle-control input:checked::after {
-    background: #57c785;
+    background: var(--px-good);
     transform: translateX(16px);
 }
 
@@ -76,7 +77,7 @@
     margin: 14px 0 0;
     padding: 12px 0 0;
     border: 0;
-    border-top: 1px solid #454b5e;
+    border-top: 1px solid var(--px-border-btn);
 }
 
 .pokemon-filter-section legend {
@@ -102,23 +103,17 @@
     gap: 5px;
     min-width: 0;
     padding: 4px 6px;
-    border: 2px solid transparent;
-    background: #21242f;
-    color: #e8e9ee;
+    border: 1px solid transparent;
+    background: var(--px-bg-btn2);
+    color: var(--px-text);
     font: inherit;
     font-size: var(--pxl-fs-xs);
     cursor: pointer;
 }
 
 .type-filter-option[aria-pressed="true"] {
-    border-color: #f7d02c;
-    background: #2e3240;
-}
-
-.type-filter-option .type-icon-img {
-    width: 24px;
-    height: 24px;
-    flex: 0 0 auto;
+    border-color: var(--px-accent);
+    background: var(--px-line);
 }
 
 .type-filter-option span {
@@ -128,7 +123,7 @@
 
 .filter-help {
     margin: 7px 0 0;
-    color: #9198ab;
+    color: var(--px-text-dim);
     font-size: var(--pxl-fs-xs);
 }
 
@@ -150,8 +145,8 @@
     right: 0;
     max-height: 240px;
     overflow-y: auto;
-    border: 2px solid #000;
-    background: #21242f;
+    border: 1px solid var(--px-border);
+    background: var(--px-bg-btn2);
 }
 
 .nature-dropdown.open {
@@ -164,9 +159,9 @@
     width: 100%;
     padding: 8px;
     border: 0;
-    border-bottom: 1px solid #454b5e;
+    border-bottom: 1px solid var(--px-border-btn);
     background: transparent;
-    color: #e8e9ee;
+    color: var(--px-text);
     font: inherit;
     text-align: left;
 }
@@ -176,7 +171,7 @@
 }
 
 .nature-dropdown button:hover {
-    background: #2e3240;
+    background: var(--px-line);
 }
 
 .nature-filter-chips {
@@ -190,8 +185,8 @@
     display: inline-flex;
     align-items: center;
     padding: 5px 7px;
-    border: 1px solid #454b5e;
-    background: #21242f;
+    border: 1px solid var(--px-border-btn);
+    background: var(--px-bg-btn2);
 }
 
 .nature-filter-chip button {
@@ -199,7 +194,7 @@
     padding: 0;
     border: 0;
     background: transparent;
-    color: #e2637a;
+    color: var(--px-bad);
     font: inherit;
     cursor: pointer;
 }
@@ -214,17 +209,20 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    color: #9198ab;
+    color: var(--px-text-dim);
+    font-family: var(--px-font-mono);
     font-size: var(--pxl-fs-xs);
 }
 
 .iv-filter-grid input {
     width: 100%;
     min-width: 0;
-    padding: 7px 4px;
-    border: 2px solid #000;
-    background: #14161c;
-    color: #e8e9ee;
+    padding: 6px 8px;
+    border: 1px solid var(--px-border);
+    border-radius: 0;
+    background: var(--px-bg-card);
+    color: var(--px-text);
+    font-family: var(--px-font-body);
     font: inherit;
 }
 
@@ -233,6 +231,60 @@
     justify-content: flex-end;
     gap: 8px;
     margin-top: 14px;
+}
+
+/* -----------------------------------------------------------------------
+   pokemon-filters.js continua usando as classes v1 (.pxl-input/.pxl-btn)
+   pra inputs/selects e pros botões Limpar/Aplicar — como o componente é
+   compartilhado e não pode ser editado aqui, a rescala pro visual v2 (flat,
+   borda 1px, Silkscreen/Pixelify) é feita via override escopado a este
+   painel, sem mexer em pokemon-filters.js.
+----------------------------------------------------------------------- */
+.pokemon-advanced-filters .pxl-input {
+    font-family: var(--px-font-body);
+    border: 1px solid var(--px-border);
+    border-radius: 0;
+    background: var(--px-bg-card);
+    color: var(--px-text);
+    box-shadow: none;
+    padding: 6px 8px;
+    font-size: 15px;
+}
+
+.pokemon-advanced-filters .pxl-input::placeholder {
+    color: var(--px-text-dim);
+}
+
+.pokemon-advanced-filters .pxl-input:focus {
+    outline: none;
+    border-color: var(--px-accent);
+    box-shadow: none;
+}
+
+.pokemon-advanced-filters .pxl-btn {
+    font-family: var(--px-font-mono);
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 11px;
+    line-height: 1.5;
+    border: 1px solid var(--px-border-btn);
+    border-radius: 0;
+    background: var(--px-bg-btn2);
+    color: var(--px-text-dim);
+    box-shadow: none;
+    padding: 5px 10px;
+    image-rendering: auto;
+}
+
+.pokemon-advanced-filters .pxl-btn:hover:not(:disabled) {
+    filter: none;
+    border-color: var(--px-accent);
+    color: var(--px-text);
+}
+
+.pokemon-advanced-filters .pxl-btn:active:not(:disabled) {
+    transform: none;
+    box-shadow: none;
 }
 
 @media (max-width: 520px) {

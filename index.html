@@ -9,461 +9,53 @@
     <link rel="stylesheet" href="components/type-tag.css">
     <link rel="stylesheet" href="components/update-notice.css">
     <style>
-        :root {
-            --bg: #14161c;
-            --panel: #1c1f28;
-            --panel-2: #21242f;
-            --line: #2e3240;
-            --text: #e8e9ee;
-            --text-dim: #9198ab;
-            --accent: #ffb238;
-            --good: #57c785;
-            --bad: #e2637a;
-
-            --t-normal: #A8A77A;
-            --t-fire: #EE8130;
-            --t-water: #6390F0;
-            --t-electric: #F7D02C;
-            --t-grass: #7AC74C;
-            --t-ice: #96D9D6;
-            --t-fighting: #C22E28;
-            --t-poison: #A33EA1;
-            --t-ground: #E2BF65;
-            --t-flying: #A98FF3;
-            --t-psychic: #F95587;
-            --t-bug: #A6B91A;
-            --t-rock: #B6A136;
-            --t-ghost: #735797;
-            --t-dragon: #6F35FC;
-            --t-dark: #705746;
-            --t-steel: #B7B7CE;
-            --t-fairy: #D685AD;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Press Start 2P', 'Courier New', ui-monospace, monospace;
-            padding: 32px 20px 80px;
-        }
-
-        .wrap {
-            max-width: 980px;
-            margin: 0 auto;
-        }
-
-        h1 {
-            letter-spacing: 0.02em;
-            margin: 0 0 4px;
-        }
-
-        h1.pxl-heading {
-            font-size: var(--pxl-fs-lg);
-            line-height: 1.7;
-        }
-
-        .subtitle {
-            color: var(--text-dim);
-            font-size: var(--pxl-fs-sm);
-            line-height: 1.6;
-            margin: 0 0 20px;
-        }
-
-        .panel {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            padding: 20px 22px;
-            margin-bottom: 20px;
-        }
-
-        .panel h2 {
-            font-size: var(--pxl-fs-xs);
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: var(--text-dim);
-            margin: 0 0 14px;
-            font-weight: 600;
-        }
-
-        .mode-row {
-            display: flex;
-            gap: 10px;
-        }
-
-        .mode-row .toggle-pill {
-            flex: 1;
-            justify-content: center;
-        }
-
-        .checkbox-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 12px;
-            font-size: var(--pxl-fs-sm);
-            color: var(--text-dim);
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .checkbox-row input[type="checkbox"] {
-            appearance: none;
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            flex: 0 0 auto;
-            margin: 0;
-            border: 2px solid #000;
-            border-radius: 0;
-            background: var(--panel-2);
-            box-shadow: 2px 2px 0 0 #000;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .checkbox-row input[type="checkbox"]:checked {
-            background: var(--accent);
-        }
-
-        .checkbox-row input[type="checkbox"]:checked::after {
-            content: '';
-            position: absolute;
-            inset: 3px;
-            background: #1a1408;
-        }
-
-        .checkbox-row.disabled-note {
-            opacity: 0.45;
-        }
-
-        .checkbox-row input:disabled {
-            cursor: not-allowed;
-        }
-
-        .type-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
-            gap: 6px;
-        }
-
-        .type-chip {
-            position: relative;
-        }
-
-        .type-chip input {
-            position: absolute;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-            margin: 0;
-            z-index: 1;
-        }
-
-        .type-chip input:disabled {
-            cursor: not-allowed;
-        }
-
-        .type-chip label {
-            display: block;
-            cursor: pointer;
-        }
-
-        .type-chip .type-tag {
-            justify-content: center;
-            width: 100%;
-            cursor: pointer;
-            filter: brightness(0.55) saturate(0.6);
-            transition: filter .15s, transform .1s, opacity .15s;
-        }
-
-        .type-chip input:checked+label .type-tag {
-            filter: brightness(1) saturate(1);
-            box-shadow: 0 0 0 2px var(--accent);
-        }
-
-        .type-chip input:disabled+label .type-tag {
-            opacity: .3;
-            cursor: not-allowed;
-        }
-
-        .type-chip label:active .type-tag {
-            transform: scale(0.97);
-        }
-
-        button.calc {
-            width: 100%;
-            padding: 14px;
-            border-radius: 10px;
-            border: none;
-            background: var(--accent);
-            color: #1a1408;
-            font-size: 0.95rem;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-            cursor: pointer;
-            margin-top: 4px;
-        }
-
-        button.calc:hover {
-            filter: brightness(1.06);
-        }
-
-        button.calc:disabled {
-            opacity: .4;
-            cursor: not-allowed;
-        }
-
-        .hint {
-            color: var(--text-dim);
-            font-size: var(--pxl-fs-sm);
-            line-height: 1.6;
-            margin-top: 10px;
-        }
-
-        .hint.warn {
-            color: var(--bad);
-        }
-
-        #results {
-            display: none;
-        }
-
-        .divider {
-            height: 1px;
-            background: var(--line);
-            margin: 18px 0;
-        }
-
-        .result-row {
-            display: grid;
-            gap: 14px;
-            align-items: center;
-            padding: 12px 4px;
-            border-bottom: 1px solid var(--line);
-        }
-
-        .result-row:last-child {
-            border-bottom: none;
-        }
-
-        .result-row.header {
-            font-size: var(--pxl-fs-xs);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-dim);
-            padding-bottom: 10px;
-            font-weight: 700;
-        }
-
-        /* layout modo Ataque: rank | tipo | dano | recebe */
-        .result-row.mode-ataque {
-            grid-template-columns: 34px 1fr 110px 110px;
-        }
-
-        /* layout modo Defesa: rank | tipo | contra-ataca | resiste */
-        .result-row.mode-defesa {
-            grid-template-columns: 34px 1fr 1fr 1fr;
-        }
-
-        .rank {
-            font-variant-numeric: tabular-nums;
-            color: var(--text-dim);
-            font-size: var(--pxl-fs-base);
-        }
-
-        .rank.top {
-            color: var(--accent);
-            font-weight: 700;
-        }
-
-        .col-title {
-            font-size: var(--pxl-fs-xs);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-dim);
-            margin-bottom: 6px;
-            font-weight: 700;
-            display: none;
-        }
-
-        .type-name {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            align-items: center;
-        }
-
-        /* ---- linhas por faixa de dano (modo Ataque) ---- */
-        .tier-row {
-            display: flex;
-            gap: 16px;
-            align-items: flex-start;
-            padding: 14px 4px;
-            border-bottom: 1px solid var(--line);
-        }
-
-        .tier-row:last-child {
-            border-bottom: none;
-        }
-
-        .tier-label {
-            flex: 0 0 56px;
-            padding-top: 3px;
-        }
-
-        .tier-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            flex: 1;
-        }
-
-        .tier-entry {
-            display: inline-flex;
-            gap: 3px;
-            align-items: center;
-        }
-
-        .tag-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-
-        .tag-list.atk .type-tag {
-            box-shadow: 0 0 0 1.5px var(--good);
-        }
-
-        .tag-list.def .type-tag {
-            box-shadow: 0 0 0 1.5px var(--bad);
-        }
-
-        .empty-tag {
-            color: var(--text-dim);
-            font-size: var(--pxl-fs-sm);
-        }
-
-        .mult {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 7px;
-            font-weight: 800;
-            font-variant-numeric: tabular-nums;
-            font-size: var(--pxl-fs-base);
-            text-align: center;
-        }
-
-        .mult-4 {
-            background: rgba(87, 199, 133, 0.22);
-            color: #6be3a0;
-        }
-
-        .mult-2 {
-            background: rgba(87, 199, 133, 0.14);
-            color: var(--good);
-        }
-
-        .mult-1 {
-            background: var(--panel-2);
-            color: var(--text-dim);
-        }
-
-        .mult-0-5 {
-            background: rgba(226, 99, 122, 0.14);
-            color: var(--bad);
-        }
-
-        .mult-0-25 {
-            background: rgba(226, 99, 122, 0.22);
-            color: #ff8fa3;
-        }
-
-        .mult-0 {
-            background: #000;
-            color: #fff;
-        }
-
-        .target-banner {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 4px;
-            font-size: var(--pxl-fs-sm);
-            color: var(--text-dim);
-        }
-
-        @media (max-width: 720px) {
-
-            .result-row.mode-ataque,
-            .result-row.mode-defesa {
-                grid-template-columns: 26px 1fr;
-            }
-
-            .result-row {
-                grid-template-areas: "rank name" ". a" ". b";
-            }
-
-            .result-row.header {
-                display: none;
-            }
-
-            .col-title {
-                display: block;
-            }
-        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--px-bg); color: var(--px-text); font-family: var(--px-font-body); font-size: 15px; padding: 9px 10px 14px; }
+        .calc-screen { display: flex; flex-direction: column; gap: 10px; }
+        .mode-row { display: flex; gap: 4px; }
+        .mode-btn { flex: 1; padding: 7px 0; letter-spacing: 1.5px; }
+        #include-dual { width: 44px; }
+        #include-dual[aria-pressed="true"] { background: var(--px-accent); border-color: var(--px-accent); color: var(--px-on-dark); }
+        .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+        .type-cell { height: 30px; display: flex; align-items: center; justify-content: center; gap: 5px; border: 2px solid var(--px-border); padding: 0; cursor: pointer; font-family: var(--px-font-mono); font-size: 11px; }
+        .type-cell.selected { border-color: var(--px-accent); }
+        .target-row { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--px-bg-card); border: 1px solid var(--px-line); }
+        .target-chips { display: flex; gap: 4px; flex: 1; }
+        .clear-btn { font-family: var(--px-font-mono); font-size: 9px; background: none; border: none; color: var(--px-text-dim); padding: 0; cursor: pointer; }
+        .hint { color: var(--px-text-dim); margin: 0; }
+        #results { display: none; }
+        .calc-rows { display: flex; flex-direction: column; gap: 7px; }
+        .calc-row { display: flex; align-items: flex-start; gap: 7px; }
+        .calc-mult { width: 38px; flex: 0 0 auto; font-family: var(--px-font-mono); font-size: 12px; padding: 7px 0; text-align: center; }
+        .calc-types { flex: 1; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+        .calc-more { font-family: var(--px-font-mono); font-size: 10px; color: var(--px-text-dim); padding: 4px 6px; background: var(--px-bg-btn2); }
     </style>
 </head>
 
-<body>
-    <div class="wrap">
-        <h1 class="pxl-heading">Calculadora de Matchups de Tipo</h1>
-        <p class="subtitle">Selecione o modo e os tipos. O resultado mostra todos os tipos (puros e combinados)
-            ordenados pela melhor cobertura.</p>
-
-        <div class="panel">
-            <h2>Ranquear por</h2>
-            <div class="mode-row">
-                <label class="toggle-pill pxl-toggle" title="Você escolhe o tipo do alvo (até 2) e vê quem bate mais forte nele">
-                    <input type="radio" name="mode" id="mode-ataque" value="ataque" checked>
-                    <span>Ataque</span>
-                </label>
-                <label class="toggle-pill pxl-toggle" title="Você escolhe tipos de ataque a enfrentar e vê quem resiste mais">
-                    <input type="radio" name="mode" id="mode-defesa" value="defesa">
-                    <span>Defesa</span>
-                </label>
-            </div>
-            <label class="checkbox-row" id="include-dual-label" title="Só se aplica no modo Defesa; um golpe é sempre de 1 tipo só">
-                <input type="checkbox" id="include-dual">
-                <span>Incluir combinações de dois tipos (ex: Água/Voador)</span>
-            </label>
-
-            <div class="divider"></div>
-
-            <h2 id="type-panel-title">Tipo do alvo (até 2)</h2>
-            <div class="type-grid" id="type-grid"></div>
-
-            <p class="hint" id="hint">Selecione ao menos um tipo acima.</p>
-
-            <div id="results">
-                <div class="divider"></div>
-                <h2 id="results-title">Resultado</h2>
-                <div id="results-body"></div>
-            </div>
+<body class="px-scroll">
+    <div class="calc-screen">
+        <div class="mode-row">
+            <button type="button" class="px-btn mode-btn active" id="mode-ataque" data-mode="ataque" data-tip="Dano que o golpe selecionado causa em cada tipo defensor.">ATAQUE</button>
+            <button type="button" class="px-btn mode-btn" id="mode-defesa" data-mode="defesa" data-tip="Dano que cada tipo de golpe causa no defensor selecionado.">DEFESA</button>
+            <button type="button" class="px-btn" id="include-dual" aria-pressed="false" data-tip="Incluir combinações de dois tipos (ex: Água/Voador)">2T</button>
         </div>
-
+        <div class="type-grid" id="type-grid"></div>
+        <div class="target-row" data-tip="" id="target-row">
+            <span class="px-label" id="target-label">GOLPE</span>
+            <div class="target-chips" id="target-chips"></div>
+            <button type="button" class="clear-btn" id="clear-selection">LIMPAR</button>
+        </div>
+        <p class="hint" id="hint">Selecione ao menos um tipo acima.</p>
+        <div id="results"><div id="results-body"></div></div>
     </div>
 
     <script src="data/extension-storage.js"></script>
+    <script src="components/tooltip.js"></script>
     <script src="components/update-notice.js"></script>
+    <script src="components/pixel-icon.js"></script>
     <script src="components/type-tag.js"></script>
     <script src="components/type-chart-data.js"></script>
+    <script src="components/shortcut-forwarder.js"></script>
     <script src="app.js"></script>
 
 </body>

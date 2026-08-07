@@ -1,20 +1,19 @@
 // ---------------------------------------------------------------------------
-// Componente do cabeçalho do overlay (content.js): linha de ícones de view
-// (calculadora / encontro / meus pokémons / tabela / config) + botão de
-// recolher. Mantém os mesmos ícones/estilos, só centraliza a criação deles
-// pra não duplicar markup entre views.
+// Barra de abas do overlay (content.js): botões 30×26 com ícone pixel 7×7
+// (encontro / calculadora / meus pokémons / config) + expandir + minimizar.
 // ---------------------------------------------------------------------------
 
-// items: [{ icon, title, view }]
-// collapseItem: { icon, title }
-// Retorna o botão de recolher, já anexado ao header (o chamador cuida do listener).
-function buildHeaderButtons(header, items, collapseItem, maximizeItem = { icon: '↗', title: 'Maximizar' }) {
+// items: [{ icon: chave de PokemonPixelIcons.UI_ICONS, tip, view }]
+function buildHeaderButtons(header, items, collapseItem, maximizeItem = { tip: 'Expandir — F' }) {
+    const iconSpan = (name, color) => PokemonPixelIcons.iconHTML(PokemonPixelIcons.UI_ICONS[name], color);
+
     items.forEach((item) => {
         const btn = document.createElement('button');
-        btn.className = 'ph-icon-btn ph-view-btn pxl-icon-btn';
-        btn.textContent = item.icon;
-        btn.title = item.title;
+        btn.className = 'ph-icon-btn ph-view-btn';
         btn.dataset.view = item.view;
+        btn.dataset.icon = item.icon;
+        btn.dataset.tip = item.tip;
+        btn.innerHTML = iconSpan(item.icon, '#7a7a92');
         header.appendChild(btn);
     });
 
@@ -23,16 +22,28 @@ function buildHeaderButtons(header, items, collapseItem, maximizeItem = { icon: 
     header.appendChild(spacer);
 
     const maximizeBtn = document.createElement('button');
-    maximizeBtn.className = 'ph-icon-btn ph-maximize-btn pxl-icon-btn';
-    maximizeBtn.textContent = maximizeItem.icon;
-    maximizeBtn.title = maximizeItem.title;
+    maximizeBtn.className = 'ph-icon-btn ph-maximize-btn';
+    maximizeBtn.dataset.tip = maximizeItem.tip;
+    maximizeBtn.innerHTML = iconSpan('tbl', '#7a7a92');
     header.appendChild(maximizeBtn);
 
     const collapseBtn = document.createElement('button');
-    collapseBtn.className = 'ph-icon-btn pxl-icon-btn';
-    collapseBtn.textContent = collapseItem.icon;
-    collapseBtn.title = collapseItem.title;
+    collapseBtn.className = 'ph-icon-btn ph-collapse-btn';
+    collapseBtn.dataset.tip = collapseItem.tip;
+    collapseBtn.textContent = '_';
     header.appendChild(collapseBtn);
 
     return { collapseBtn, maximizeBtn };
+}
+
+// repinta os ícones conforme a view ativa (chamado por setActiveView)
+function paintHeaderButtons(container, activeView) {
+    container.querySelectorAll('.ph-view-btn').forEach((btn) => {
+        const active = btn.dataset.view === activeView;
+        btn.classList.toggle('active', active);
+        btn.innerHTML = PokemonPixelIcons.iconHTML(
+            PokemonPixelIcons.UI_ICONS[btn.dataset.icon],
+            active ? '#0c0c11' : '#7a7a92'
+        );
+    });
 }
