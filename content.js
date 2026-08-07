@@ -554,6 +554,9 @@
             #${ID} .ph-subhead { font-family: 'Silkscreen', monospace; font-size: 9px; color: #63637a; letter-spacing: 1px; margin: 8px 0 6px; }
             #${ID} .ph-shortcut-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; margin-bottom: 10px; }
             #${ID} .ph-key { font-family: 'Silkscreen', monospace; font-size: 11px; color: #ffb545; background: #1a1a24; border: 1px solid #2b2b39; padding: 3px 7px; text-align: center; }
+            #${ID} .ph-key-btn { cursor: pointer; min-width: 52px; }
+            #${ID} .ph-key-btn.capturing { color: #0c0c11; background: #ffb545; border-color: #ffb545; }
+            #${ID} .ph-shortcut-error { color: #e06c60; font-size: 12px; font-family: 'Silkscreen', monospace; min-height: 14px; margin: 0 0 8px; }
             #${ID} .ph-key-desc { font-size: 15px; color: #8a8aa0; }
             #${ID} .ph-hint { color: #8a8aa0; font-size: 13px; margin: 4px 0 12px; }
             #${ID} .ph-btn-shortcut { width: 100%; }

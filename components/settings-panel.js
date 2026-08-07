@@ -78,18 +78,96 @@ function buildSettingsPanel(shell) {
                 <button type="button" class="ph-toggle" id="ph-bt-mymoves" role="switch" aria-checked="true" aria-labelledby="ph-bt-mymoves-label"></button>
             </div>
             <div class="ph-set-head">ATALHOS</div>
-            <div class="ph-shortcut-grid">
-                ${[['E', 'Encontro atual'], ['C', 'Calculadora de tipos'], ['M', 'Meus Pokémon'], [',', 'Configurações'],
-                   ['T', 'Tabela de tipos (expande o painel)'], ['F', 'Expandir / recolher'], ['ESC', 'Minimizar / voltar']]
-                    .map(([k, v]) => `<span class="ph-key">${k}</span><span class="ph-key-desc">${v}</span>`).join('')}
-            </div>
-            <p class="ph-hint">Os atalhos valem com o mouse/foco sobre o painel.</p>
+            <div class="ph-shortcut-grid" id="ph-shortcut-grid"></div>
+            <p class="ph-shortcut-error" id="ph-shortcut-error"></p>
+            <p class="ph-hint">Os atalhos valem com o mouse/foco sobre o painel. Clique numa tecla e pressione a nova combinação (ESC cancela; ESC só volta a uma ação via restaurar padrões). Combinações do navegador (Ctrl+W, Ctrl+T…) podem não funcionar.</p>
+            <button type="button" class="ph-btn-shortcut px-btn" id="ph-shortcut-reset">Restaurar atalhos padrão</button>
             <button type="button" class="ph-btn-shortcut px-btn" id="ph-set-shortcut">Configurar atalho do navegador</button>
             <p class="ph-hint">Abre a página de atalhos do Chrome, onde dá pra definir a combinação que abre e fecha a extensão.</p>
         `;
 
         panel.querySelector('#ph-set-shortcut').addEventListener('click', () => {
             chrome.runtime.sendMessage({ type: 'pkmn-helper-open-shortcuts' });
+        });
+
+        const SHORTCUT_ACTIONS = [
+            ['battle', 'Encontro atual'],
+            ['calc', 'Calculadora de tipos'],
+            ['myPokemons', 'Meus Pokémon'],
+            ['settings', 'Configurações'],
+            ['typeChart', 'Tabela de tipos (expande o painel)'],
+            ['toggleFull', 'Expandir / recolher'],
+            ['minimize', 'Minimizar / voltar']
+        ];
+        const shortcutGrid = panel.querySelector('#ph-shortcut-grid');
+        const shortcutError = panel.querySelector('#ph-shortcut-error');
+        const fmt = PokemonHelperShortcutUtils.formatCombo;
+
+        function renderShortcutGrid(shortcuts) {
+            shortcutGrid.innerHTML = SHORTCUT_ACTIONS.map(([action, label]) =>
+                `<button type="button" class="ph-key ph-key-btn" data-action="${action}">${fmt(shortcuts[action])}</button>` +
+                `<span class="ph-key-desc">${label}</span>`
+            ).join('');
+        }
+        PokemonHelperStorage.getUiPreferences().then((prefs) => renderShortcutGrid(prefs.shortcuts)).catch(() => {});
+
+        let capturing = null; // { action, btn }
+        function stopCapture() {
+            if (!capturing) return;
+            capturing.btn.classList.remove('capturing');
+            PokemonHelperStorage.getUiPreferences()
+                .then((prefs) => { capturing = null; renderShortcutGrid(prefs.shortcuts); })
+                .catch(() => { capturing = null; });
+            document.removeEventListener('keydown', onCaptureKey, true);
+        }
+
+        function onCaptureKey(event) {
+            if (!capturing) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (event.key === 'Escape') { shortcutError.textContent = ''; stopCapture(); return; }
+            const combo = PokemonHelperShortcutUtils.comboFromEvent(event);
+            if (!combo) return; // modificador sozinho: continua capturando
+            const action = capturing.action;
+            PokemonHelperStorage.getUiPreferences().then((prefs) => {
+                const inUse = Object.keys(prefs.shortcuts)
+                    .find((name) => name !== action && prefs.shortcuts[name] === combo);
+                if (inUse) {
+                    const label = SHORTCUT_ACTIONS.find(([name]) => name === inUse)[1];
+                    shortcutError.textContent = `${fmt(combo)} JÁ É USADO POR: ${label.toUpperCase()}`;
+                    return; // segue capturando pra tentar outra
+                }
+                shortcutError.textContent = '';
+                return PokemonHelperStorage.setUiPreferences({ shortcuts: { [action]: combo } })
+                    .then(() => stopCapture());
+            }).catch((error) => {
+                console.warn('[Pokemon Helper] Não foi possível salvar o atalho:', error);
+                stopCapture();
+            });
+        }
+
+        shortcutGrid.addEventListener('click', (event) => {
+            const btn = event.target.closest('.ph-key-btn');
+            if (!btn) return;
+            if (capturing) stopCapture();
+            capturing = { action: btn.dataset.action, btn };
+            btn.classList.add('capturing');
+            btn.textContent = '...';
+            shortcutError.textContent = '';
+            document.addEventListener('keydown', onCaptureKey, true);
+        });
+        // clicar em qualquer lugar fora do botão em captura cancela
+        panel.addEventListener('click', (event) => {
+            if (capturing && !event.target.closest('.ph-key-btn')) stopCapture();
+        });
+
+        panel.querySelector('#ph-shortcut-reset').addEventListener('click', () => {
+            shortcutError.textContent = '';
+            PokemonHelperStorage.setUiPreferences({
+                shortcuts: Object.assign({}, PokemonHelperStorage.DEFAULT_UI_PREFERENCES.shortcuts)
+            }).then(() => PokemonHelperStorage.getUiPreferences())
+              .then((prefs) => renderShortcutGrid(prefs.shortcuts))
+              .catch((error) => console.warn('[Pokemon Helper] Não foi possível restaurar os atalhos:', error));
         });
 
         const notificationsToggle = panel.querySelector('#ph-update-notifications');
