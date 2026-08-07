@@ -35,20 +35,17 @@ atualizações futuras ficam mais fáceis (veja [Atualização](#atualização))
 ### Opção 1: download do ZIP
 
 1. Acesse o [repositório da Infinity MMO Extension](https://github.com/andaraGui/pokemon-infinity-mmo-extension).
-2. Escolha a versão desejada no seletor de branch:
-   - `main`: versão estável;
-   - `develop`: versão beta, com funcionalidades que ainda estão em teste.
-3. Clique em **Code → Download ZIP**.
-4. Extraia o ZIP em uma pasta que não será apagada ou movida. O navegador
+2. Clique em **Code → Download ZIP**.
+3. Extraia o ZIP em uma pasta que não será apagada ou movida. O navegador
    continuará carregando a extensão a partir dessa pasta.
-5. Abra `chrome://extensions` no Chrome ou em outro navegador baseado em
+4. Abra `chrome://extensions` no Chrome ou em outro navegador baseado em
    Chromium.
-6. Ative o **Modo do desenvolvedor**.
-7. Clique em **Carregar sem compactação** (*Load unpacked*) e selecione a
+5. Ative o **Modo do desenvolvedor**.
+6. Clique em **Carregar sem compactação** (*Load unpacked*) e selecione a
    pasta extraída que contém o arquivo `manifest.json`.
-8. Deixe a extensão ativada.
+7. Deixe a extensão ativada.
 
-> Em caso de dúvida nos passos 5-7, a
+> Em caso de dúvida nos passos 4-6, a
 > [documentação oficial do Chrome](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world?hl=pt-br#load-unpacked)
 > mostra com capturas de tela como carregar uma extensão sem compactação.
 
@@ -69,29 +66,20 @@ Esta opção exige o [Git](https://git-scm.com/) instalado no computador.
    cd pokemon-infinity-mmo-extension
    ```
 
-4. Escolha a branch que deseja usar. Para acessar a versão beta:
-
-   ```bash
-   git switch develop
-   ```
-
-   Para usar a versão estável, permaneça na branch `main` ou execute
-   `git switch main`.
-5. Abra `chrome://extensions`, ative o **Modo do desenvolvedor**, clique em
+4. Abra `chrome://extensions`, ative o **Modo do desenvolvedor**, clique em
    **Carregar sem compactação** e selecione a pasta
    `pokemon-infinity-mmo-extension`, que contém o arquivo `manifest.json`.
 
 ## Atualização
 
-**Se instalou pelo ZIP:** baixe novamente o ZIP da branch desejada (`main`
-ou `develop`), extraia por cima da pasta já usada e, em `chrome://extensions`,
-clique no botão de recarregar (↻) no card da extensão.
+**Se instalou pelo ZIP:** baixe novamente o ZIP, extraia por cima da pasta
+já usada e, em `chrome://extensions`, clique no botão de recarregar (↻) no
+card da extensão.
 
-**Se instalou com Git:** abra um terminal dentro da pasta do projeto,
-confirme que está na branch desejada e baixe as alterações:
+**Se instalou com Git:** abra um terminal dentro da pasta do projeto e
+baixe as alterações:
 
 ```bash
-git switch develop # ou: git switch main
 git pull
 ```
 
@@ -99,7 +87,7 @@ Depois de atualizar por qualquer um dos métodos, volte a
 `chrome://extensions`, clique no botão de recarregar (↻) no card da extensão
 e recarregue a página do jogo. Se a checagem automática de versão estiver
 ligada (veja [Configurações](#configurações)), uma faixa de aviso aparece no
-overlay quando houver uma versão mais nova disponível na branch escolhida.
+overlay quando houver uma versão mais nova disponível.
 
 ## Primeiros passos
 
@@ -235,8 +223,8 @@ Cinco blocos, nesta ordem na tela.
 - **Avisar sobre atualizações** — toggle (padrão desligado). Liga a
   checagem periódica de nova versão e o aviso nas telas.
 - **Canal beta** — toggle, só aparece com "Avisar" ligado (padrão
-  desligado). Compara a versão instalada contra a branch `develop` em vez
-  de `main`.
+  desligado). Inclui as versões beta (em teste) nos avisos de
+  atualização.
 - **Tooltips ao passar o mouse** — toggle (padrão ligado). Liga/desliga
   globalmente as dicas (ⓘ) em todas as telas.
 
