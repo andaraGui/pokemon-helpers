@@ -112,13 +112,16 @@ function buildSettingsPanel(shell) {
         PokemonHelperStorage.getUiPreferences().then((prefs) => renderShortcutGrid(prefs.shortcuts)).catch(() => {});
 
         let capturing = null; // { action, btn }
+        let captureToken = 0; // sobe a cada início/fim de captura; descarta o re-render assíncrono de uma stopCapture já superada por uma captura mais nova
         function stopCapture() {
             if (!capturing) return;
             capturing.btn.classList.remove('capturing');
-            PokemonHelperStorage.getUiPreferences()
-                .then((prefs) => { capturing = null; renderShortcutGrid(prefs.shortcuts); })
-                .catch(() => { capturing = null; });
+            capturing = null; // síncrono: uma captura nova iniciada logo em seguida nunca é apagada por este reset
             document.removeEventListener('keydown', onCaptureKey, true);
+            const token = ++captureToken;
+            PokemonHelperStorage.getUiPreferences()
+                .then((prefs) => { if (token === captureToken) renderShortcutGrid(prefs.shortcuts); })
+                .catch(() => {});
         }
 
         function onCaptureKey(event) {
@@ -150,6 +153,7 @@ function buildSettingsPanel(shell) {
             const btn = event.target.closest('.ph-key-btn');
             if (!btn) return;
             if (capturing) stopCapture();
+            captureToken++; // invalida o re-render pendente da stopCapture acima antes de abrir a captura nova
             capturing = { action: btn.dataset.action, btn };
             btn.classList.add('capturing');
             btn.textContent = '...';
