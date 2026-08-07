@@ -71,22 +71,19 @@ Esta opção exige o [Git](https://git-scm.com/) instalado no computador.
 
 ## Atualização
 
-**Se instalou pelo ZIP:** baixe novamente o ZIP, extraia por cima da pasta
-já usada e, em `chrome://extensions`, clique no botão de recarregar (↻) no
-card da extensão.
+**Se instalou com Git (recomendado):** dê dois cliques no arquivo
+`atualizar.bat`, dentro da pasta da extensão, e aguarde a mensagem de
+sucesso. A extensão percebe a versão nova e se recarrega sozinha em alguns
+instantes — depois é só recarregar a página do jogo (F5). Rodar `git pull`
+num terminal dentro da pasta tem o mesmo efeito.
 
-**Se instalou com Git:** abra um terminal dentro da pasta do projeto e
-baixe as alterações:
+**Se instalou pelo ZIP:** baixe novamente o ZIP e extraia por cima da pasta
+já usada. A extensão também se recarrega sozinha nesse fluxo — depois,
+recarregue a página do jogo (F5).
 
-```bash
-git pull
-```
-
-Depois de atualizar por qualquer um dos métodos, volte a
-`chrome://extensions`, clique no botão de recarregar (↻) no card da extensão
-e recarregue a página do jogo. Se a checagem automática de versão estiver
-ligada (veja [Configurações](#configurações)), uma faixa de aviso aparece no
-overlay quando houver uma versão mais nova disponível.
+Se a checagem automática de versão estiver ligada (veja
+[Configurações](#configurações)), uma faixa de aviso aparece no overlay
+quando houver uma versão mais nova disponível.
 
 ## Primeiros passos
 
