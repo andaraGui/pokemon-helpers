@@ -22,12 +22,13 @@ var PokemonAbilityInfo = globalThis.PokemonAbilityInfo || (() => {
                 node.innerHTML = '';
                 node.append(document.createTextNode(name));
                 if (description) {
+                    // ícone/caixa padrão do design system (components/tooltip.js)
                     const info = document.createElement('span');
-                    info.className = 'ability-info';
+                    info.className = 'px-tip-icon';
                     info.tabIndex = 0;
                     info.setAttribute('role', 'img');
                     info.setAttribute('aria-label', `${name}: ${description}`);
-                    info.dataset.tooltip = description;
+                    info.dataset.tip = description;
                     info.textContent = 'ⓘ';
                     node.append(document.createTextNode(' '), info);
                 }

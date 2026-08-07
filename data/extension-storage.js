@@ -8,7 +8,8 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         abilities: 'pkmnHelperAbilities',
         pokedex: 'pkmnHelperPokedex',
         trainerMoves: 'pkmnHelperTrainerMoves',
-        discoveredMoves: 'pkmnHelperDiscoveredMoves'
+        discoveredMoves: 'pkmnHelperDiscoveredMoves',
+        uiPreferences: 'pkmnHelperUiPreferences'
     });
 
     const DEFAULT_OVERLAY_SETTINGS = Object.freeze({
@@ -19,6 +20,8 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         maximized: false,
         restoreWidth: null,
         restoreRight: null,
+        restoreTop: null,
+        restoreHeight: null,
         collapsed: true,
         view: 'calc',
         open: true
@@ -36,6 +39,10 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         channel: null,
         checkedAt: null,
         error: null
+    });
+
+    const DEFAULT_UI_PREFERENCES = Object.freeze({
+        tooltipsEnabled: true
     });
 
     function read(key, defaults) {
@@ -74,12 +81,15 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         DEFAULT_OVERLAY_SETTINGS,
         DEFAULT_UPDATE_PREFERENCES,
         DEFAULT_UPDATE_STATUS,
+        DEFAULT_UI_PREFERENCES,
         getOverlaySettings: () => read(KEYS.overlaySettings, DEFAULT_OVERLAY_SETTINGS),
         setOverlaySettings: (settings) => write(KEYS.overlaySettings, settings),
         getUpdatePreferences: () => read(KEYS.updatePreferences, DEFAULT_UPDATE_PREFERENCES),
         setUpdatePreferences: (changes) => update(KEYS.updatePreferences, DEFAULT_UPDATE_PREFERENCES, changes),
         getUpdateStatus: () => read(KEYS.updateStatus, DEFAULT_UPDATE_STATUS),
         setUpdateStatus: (status) => write(KEYS.updateStatus, Object.assign({}, DEFAULT_UPDATE_STATUS, status)),
+        getUiPreferences: () => read(KEYS.uiPreferences, DEFAULT_UI_PREFERENCES),
+        setUiPreferences: (changes) => update(KEYS.uiPreferences, DEFAULT_UI_PREFERENCES, changes),
         getAbilities: () => read(KEYS.abilities, { items: [], checkedAt: null, error: null }),
         setAbilities: (value) => write(KEYS.abilities, value),
         getPokedex: () => read(KEYS.pokedex, { items: [], checkedAt: null, error: null }),

@@ -32,33 +32,30 @@ const TYPE_MAPPER = {
     16: 'dragon', 17: 'dark', 18: 'fairy'
 };
 
-// opts.colored usa o ícone com o círculo colorido (standalone); por padrão
-// usa o glifo branco transparente, pensado pra ficar dentro do pill colorido.
+// opts.colored mantido por compatibilidade (ignorado — o ícone pixel herda a cor)
 function typeIconHTML(type, opts = {}) {
-    const variant = opts.colored ? 'colored/' : '';
+    const bg = PokemonPixelIcons.typeColor(type);
+    const color = opts.color || (opts.onType ? PokemonPixelIcons.onColor(bg) : bg);
     const title = opts.title ? ` title="${LABELS[type]}"` : '';
-    return `<img class="type-icon-img" src="icons/types/${variant}${type}.png" alt=""${title}>`;
+    return `<span class="type-icon-px"${title}>${PokemonPixelIcons.typeIcon(type, color)}</span>`;
 }
 
-// ---- componente de tag: uma única pill, sólida (1 tipo) ou com fundo em
-// gradiente meio a meio (2 tipos) — mesma estrutura/classes pros dois casos,
-// só muda o fundo e a quantidade de ícones/abreviações dentro.
-// opts.abbr troca o nome completo pela abreviação de 3 letras
-// opts.stack empilha ícone(s) (em cima) + abreviação (embaixo), como na tabela de referência
-// opts.title troca o tooltip padrão (nome do tipo) por um texto customizado
+// pill do design system v2: fundo na cor do tipo, ícone pixel + abreviação em
+// Silkscreen, texto na cor de maior contraste. Dois tipos = gradiente 50/50
+// com os dois ícones/abreviações (contraste calculado pela cor do 1º tipo).
 function typeTagHTML(types, opts = {}) {
     if (!Array.isArray(types)) types = [types];
     const stacked = !!opts.stack;
-    const dict = (opts.abbr || stacked) ? ABBR : LABELS;
+    const dict = ABBR; // v2 sempre abrevia (o nome completo vive no tooltip)
     const cls = `type-tag${stacked ? ' mini' : ''}`;
     const background = types.length === 2
         ? `linear-gradient(135deg, var(--t-${types[0]}) 50%, var(--t-${types[1]}) 50%)`
         : `var(--t-${types[0]})`;
+    const fg = PokemonPixelIcons.onColor(PokemonPixelIcons.typeColor(types[0]));
     const title = opts.title ?? types.map((type) => LABELS[type]).join(' / ');
-    const icons = types.map((type) => typeIconHTML(type)).join('');
-    const label = opts.label ?? types.map((type) => dict[type]).join(' / ');
-    const labelHtml = stacked ? `<span class="abbr">${label}</span>` : label;
-    return `<span class="${cls}" style="background:${background}" title="${title}">` +
-        `<span class="icon">${icons}</span>${labelHtml}` +
+    const icons = types.map((type) => PokemonPixelIcons.typeIcon(type, fg)).join('');
+    const label = opts.label ?? types.map((type) => dict[type]).join('/');
+    return `<span class="${cls}" style="background:${background};color:${fg}" data-tip="${title}">` +
+        `${icons}<span class="abbr">${label}</span>` +
         `</span>`;
 }
