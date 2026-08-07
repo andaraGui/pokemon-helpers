@@ -48,13 +48,13 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         autoSwitchToBattle: true,
         // ação → combinação normalizada (ver PokemonHelperShortcutUtils)
         shortcuts: Object.freeze({
-            battle: 'e',
-            calc: 'c',
-            myPokemons: 'm',
-            settings: ',',
+            battle: '1',
+            calc: '2',
+            myPokemons: '3',
+            settings: '4',
             typeChart: 't',
             toggleFull: 'f',
-            minimize: 'escape'
+            minimize: '`'
         }),
         screens: Object.freeze({
             myPokemons: Object.freeze({
