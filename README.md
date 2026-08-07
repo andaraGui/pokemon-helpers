@@ -165,14 +165,14 @@ Mostrada assim que há um oponente capturado numa batalha.
 
 ### Calculadora
 
-- **Modo Ataque** (padrão) — seleciona até 2 tipos como alvo (o mais antigo
-  cai ao escolher um 3º) e mostra quanto dano cada um dos 18 tipos de
-  ataque causaria nesse alvo.
-- **Modo Defesa** — seleciona um ou mais tipos de ataque a enfrentar e
-  mostra, para cada tipo (ou combinação, com "2T" ligado), o pior
-  multiplicador de dano recebido.
-- Botão **2T** (incluir combinações de dois tipos) — só habilitado no modo
-  Defesa.
+- **Modo Ataque** (padrão) — seleciona o tipo de **um golpe** (seu ou do
+  oponente) e mostra o dano que ele causa em cada tipo defensor (ou
+  combinação, com "2T" ligado).
+- **Modo Defesa** — seleciona até 2 tipos do **Pokémon defensor** (o mais
+  antigo cai ao escolher um 3º) e mostra quais tipos de golpe são mais ou
+  menos efetivos contra ele (o 1× neutro fica de fora da lista).
+- Botão **2T** (incluir combinações de dois tipos entre os defensores) —
+  só habilitado no modo Ataque, já que golpes são sempre de um tipo só.
 - Botão **LIMPAR** — zera a seleção de tipos.
 - Resultado agrupado por multiplicador (4×, 2×, 1×, ½×, ¼×, 0×), com cores
   invertidas no modo Defesa (verde = bom para quem defende).
