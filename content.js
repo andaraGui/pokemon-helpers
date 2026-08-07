@@ -316,6 +316,15 @@
             setActiveView(btn.dataset.view, container);
         });
 
+        // cliques no shell (cabeçalho, botões) focam o elemento clicado e
+        // "roubam" o teclado do jogo — devolve o foco após o clique. Exceção:
+        // aba Configurações, onde inputs e captura de atalho precisam de foco.
+        container.addEventListener('click', () => {
+            if (container.dataset.activeView === 'settings') return;
+            const active = document.activeElement;
+            if (active && container.contains(active) && !/INPUT|TEXTAREA|SELECT/.test(active.tagName)) active.blur();
+        });
+
         // a tabela 18×18 só aparece no modo expandido, ao lado das views de
         // conteúdo (syncFullSide) — estas são as views que a exibem
         const CHART_HOST_VIEWS = ['calc', 'battle'];
@@ -323,7 +332,13 @@
 
         function performAction(action) {
             const container = document.getElementById(ID);
-            if (!container || container.classList.contains('collapsed')) return;
+            if (!container) return;
+            if (container.classList.contains('collapsed')) {
+                // da bolha, atalho de view expande e abre a aba;
+                // toggleFull/minimize não fazem sentido colapsado
+                if (!VIEW_ACTIONS[action] && action !== 'typeChart') return;
+                setCollapsed(container, currentSettings(container), false);
+            }
             const settings = currentSettings(container);
             if (VIEW_ACTIONS[action]) {
                 delete container.dataset.preBattleView;
@@ -355,12 +370,6 @@
             const action = Object.keys(shortcuts).find((name) => shortcuts[name] === combo);
             if (action) performAction(action);
         }
-        // atalhos só valem com o evento no painel (nunca no documento do jogo —
-        // o jogo usa essas teclas pra gameplay)
-        container.addEventListener('keydown', (event) => {
-            if (/INPUT|TEXTAREA|SELECT/.test(event.target.tagName)) return;
-            handleShortcut(event);
-        });
         // registrado uma única vez em `window` (persiste entre toggles da
         // extensão, ao contrário do `container`, que é recriado do zero a cada
         // vez) — sem essa guarda, cada toggle empilharia mais um listener e um
@@ -377,7 +386,50 @@
                     const settings = overlay && currentSettings(overlay);
                     if (settings?.maximized) overlay.querySelector('.ph-maximize-btn')?.click();
                 }
+                if (data.type === 'panel-interaction') {
+                    // clique dentro de um iframe do painel moveu o foco pra ele e o
+                    // jogo parou de receber teclado — devolve o foco ao documento
+                    // do jogo tirando-o do iframe
+                    const overlay = document.getElementById(ID);
+                    if (!overlay || overlay.dataset.activeView === 'settings') return;
+                    const active = document.activeElement;
+                    if (active && active.classList && active.classList.contains('ph-frame')) active.blur();
+                }
             });
+        }
+        // atalhos globais: funcionam com o foco no documento do jogo. Tecla que
+        // bate com um atalho configurado é CONSUMIDA (o jogo não a vê) — quem
+        // quiser reservar uma tecla pro jogo troca o atalho nas Configurações.
+        // Capture phase pra agir antes dos listeners do próprio jogo; guarda em
+        // window pela mesma razão do bloco acima (o listener fica no document,
+        // que sobrevive aos toggles do painel).
+        if (!window.__pkmnHelperGlobalShortcutAdded) {
+            window.__pkmnHelperGlobalShortcutAdded = true;
+            document.addEventListener('keydown', (event) => {
+                const target = event.target;
+                if (target instanceof Element) {
+                    // campos de texto (chat do jogo, inputs do painel) ficam imunes
+                    if (/INPUT|TEXTAREA|SELECT/.test(target.tagName) || target.isContentEditable) return;
+                    // o painel de Configurações vive neste documento (é um <div>,
+                    // não iframe) — tecla com foco lá dentro não é atalho
+                    if (target.closest('#pokemon-settings-panel')) return;
+                }
+                const overlay = document.getElementById(ID);
+                if (!overlay) return;
+                // captura de atalho em andamento: onCaptureKey (settings-panel)
+                // também escuta o document em capture phase, mas registrado
+                // DEPOIS deste listener — consumir aqui impediria gravar uma
+                // tecla que já é atalho de outra ação
+                if (overlay.querySelector('.ph-key-btn.capturing')) return;
+                const combo = PokemonHelperShortcutUtils.comboFromEvent(event);
+                if (!combo) return;
+                const shortcuts = uiPrefs().shortcuts;
+                const action = Object.keys(shortcuts).find((name) => shortcuts[name] === combo);
+                if (!action) return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                performAction(action);
+            }, true);
         }
 
         if (!window.__pkmnHelperPayloadListenerAdded) {

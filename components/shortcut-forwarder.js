@@ -18,4 +18,12 @@
             meta: event.metaKey
         }, '*');
     });
+
+    // cliques também são repassados: o clique focou este iframe e o jogo parou
+    // de receber teclado — o shell decide se devolve o foco (content.js,
+    // mensagem 'panel-interaction')
+    window.addEventListener('click', (event) => {
+        if (/INPUT|TEXTAREA|SELECT/.test(event.target.tagName)) return;
+        window.parent.postMessage({ type: 'panel-interaction' }, '*');
+    });
 })();
