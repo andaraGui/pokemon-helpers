@@ -230,12 +230,3 @@ function renderGroupedResults(entries, mode) {
         </div>`;
         }).join('') + `</div>`;
 }
-
-// atalhos do painel: repassa a tecla pro shell (iframe -> parent) trocar de aba
-window.addEventListener('keydown', (event) => {
-    if (/INPUT|TEXTAREA/.test(event.target.tagName)) return;
-    const key = event.key.toLowerCase();
-    if (['e', 'c', 't', 'm', ',', 'f', 'escape'].includes(key)) {
-        window.parent.postMessage({ type: 'panel-shortcut', key }, '*');
-    }
-});

@@ -608,12 +608,3 @@ window.addEventListener('message', (event) => {
     UI_STATE.forceExpandAll = full;
     render();
 });
-
-// atalhos do painel (repassados pelo shell) — ver content.js/handleShortcut
-window.addEventListener('keydown', (event) => {
-    if (/INPUT|TEXTAREA/.test(event.target.tagName)) return;
-    const key = event.key.toLowerCase();
-    if (['e', 'c', 't', 'm', ',', 'f', 'escape'].includes(key)) {
-        window.parent.postMessage({ type: 'panel-shortcut', key }, '*');
-    }
-});
