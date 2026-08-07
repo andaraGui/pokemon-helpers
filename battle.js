@@ -280,11 +280,15 @@ const MOVE_SOURCE_LABELS = {
 };
 
 // texto do ⓘ do cabeçalho GOLPES DELE: fonte única usa o rótulo existente;
-// lista mista explica o selo VISTO
+// lista mista enumera só as fontes realmente presentes
 function foeMovesHint(resolved) {
     const sources = new Set(resolved.moves.map((move) => move.source));
     if (sources.size <= 1) return MOVE_SOURCE_LABELS[resolved.moves[0]?.source] || '';
-    return `${resolved.seenCount} confirmado(s) em batalha (selo VISTO); os demais são estimados (wiki do treinador ou nível).`;
+    const parts = [];
+    if (sources.has('discovered')) parts.push(`${resolved.seenCount} confirmado(s) em batalha (selo VISTO)`);
+    if (sources.has('trainer')) parts.push('moveset do treinador (wiki)');
+    if (sources.has('heuristic')) parts.push('estimados pelo nível');
+    return `Mistura de fontes: ${parts.join(' + ')}.`;
 }
 
 const MOVE_CATEGORY_LABELS = { physical: 'Físico', special: 'Especial', status: 'Status' };
