@@ -285,7 +285,10 @@
             setActiveView(btn.dataset.view, container);
         });
 
-        const SHORTCUT_VIEWS = { e: 'battle', c: 'calc', t: 'calc', m: 'myPokemons', ',': 'settings' };
+        const SHORTCUT_VIEWS = { e: 'battle', c: 'calc', m: 'myPokemons', ',': 'settings' };
+        // a tabela 18×18 só aparece no modo expandido, ao lado das views de
+        // conteúdo (syncFullSide) — estas são as views que a exibem
+        const CHART_HOST_VIEWS = ['calc', 'battle'];
         function handleShortcut(key) {
             const container = document.getElementById(ID);
             if (!container || container.classList.contains('collapsed')) return;
@@ -295,6 +298,17 @@
                 setActiveView(SHORTCUT_VIEWS[key], container);
             } else if (key === 'f') {
                 container.querySelector('.ph-maximize-btn')?.click();
+            } else if (key === 't') {
+                // atalho dedicado da tabela de tipos: de qualquer tela, expande
+                // o painel já com a tabela à mostra; T de novo volta ao encaixado
+                const view = container.dataset.activeView || 'calc';
+                if (settings.maximized && CHART_HOST_VIEWS.includes(view)) {
+                    container.querySelector('.ph-maximize-btn')?.click();
+                } else {
+                    delete container.dataset.preBattleView;
+                    if (!CHART_HOST_VIEWS.includes(view)) setActiveView('calc', container);
+                    if (!settings.maximized) container.querySelector('.ph-maximize-btn')?.click();
+                }
             } else if (key === 'escape') {
                 if (settings.maximized) container.querySelector('.ph-maximize-btn')?.click();
                 else setCollapsed(container, settings, true);
@@ -577,7 +591,7 @@
             <div class="ph-set-head">ATALHOS</div>
             <div class="ph-shortcut-grid">
                 ${[['E', 'Encontro atual'], ['C', 'Calculadora de tipos'], ['M', 'Meus Pokémon'], [',', 'Configurações'],
-                   ['F', 'Expandir / tabela completa'], ['ESC', 'Minimizar / voltar']]
+                   ['T', 'Tabela de tipos (expande o painel)'], ['F', 'Expandir / recolher'], ['ESC', 'Minimizar / voltar']]
                     .map(([k, v]) => `<span class="ph-key">${k}</span><span class="ph-key-desc">${v}</span>`).join('')}
             </div>
             <p class="ph-hint">Os atalhos valem com o mouse/foco sobre o painel.</p>

@@ -70,133 +70,6 @@
             display: inline-block;
         }
 
-        /* ---- alternância ataque/defesa ---- */
-        .mode-row {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 10px;
-        }
-
-        .toggle-pill {
-            position: relative;
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            font-family: var(--px-font-mono);
-            font-size: 11px;
-            letter-spacing: 1.5px;
-            padding: 7px 0;
-            background: var(--px-bg-btn2);
-            border: 1px solid var(--px-border-btn);
-            color: var(--px-text-dim);
-            cursor: pointer;
-        }
-
-        .toggle-pill input {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .toggle-pill:has(input:checked),
-        .toggle-pill.active {
-            background: var(--px-accent);
-            border-color: var(--px-accent);
-            color: var(--px-on-dark);
-        }
-
-        /* ---- filtro por tags da tabela completa ---- */
-        .chart-filter {
-            margin-bottom: 10px;
-        }
-
-        .chart-filter-label {
-            font-family: var(--px-font-mono);
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--px-text-dim);
-            margin-bottom: 6px;
-        }
-
-        .chart-filter input[type="text"] {
-            width: 100%;
-            margin-bottom: 8px;
-        }
-
-        .tag-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            min-height: 1px;
-        }
-
-        .filter-chip {
-            display: inline-flex;
-            align-items: stretch;
-        }
-
-        .remove-chip {
-            background: var(--px-bg-btn2);
-            border: 1px solid var(--px-border-btn);
-            border-left: none;
-            color: var(--px-text-dim);
-            cursor: pointer;
-            padding: 0 8px;
-            font-family: var(--px-font-mono);
-            font-size: 11px;
-            line-height: 1;
-        }
-
-        .remove-chip:hover {
-            color: var(--px-bad);
-        }
-
-        .chart-filter-options {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 8px;
-        }
-
-        .autocomplete-wrap {
-            position: relative;
-            margin-bottom: 8px;
-        }
-
-        .autocomplete-dropdown {
-            display: none;
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0;
-            right: 0;
-            background: var(--px-bg-card);
-            border: 1px solid var(--px-border);
-            max-height: 240px;
-            overflow-y: auto;
-            z-index: 10;
-        }
-
-        .autocomplete-dropdown.open {
-            display: block;
-        }
-
-        .autocomplete-option {
-            padding: 7px 8px;
-            cursor: pointer;
-            display: flex;
-        }
-
-        .autocomplete-option:hover {
-            background: var(--px-bg-btn2);
-        }
-
-        .autocomplete-empty {
-            padding: 8px;
-            font-size: 12px;
-            color: var(--px-text-dim);
-        }
 
         /* ---- tabela completa interativa ---- */
         .chart-scroll {
@@ -262,23 +135,9 @@
             outline-offset: -2px;
         }
 
-        table.type-chart tr.row-hidden {
-            display: none;
-        }
 
-        table.type-chart th.col-hidden,
-        table.type-chart td.col-hidden {
-            display: none;
-        }
 
-        tr.extra-row,
-        th.col-head.extra {
-            box-shadow: inset 3px 0 0 var(--px-accent);
-        }
 
-        tr.extra-row th.row-head {
-            box-shadow: inset 3px 0 0 var(--px-accent);
-        }
 
         .hint {
             color: var(--px-text-dim);
@@ -302,39 +161,6 @@
         <button type="button" class="px-btn px-btn-accent" id="chart-back">◂ VOLTAR</button>
     </div>
 
-    <div class="mode-row">
-        <label class="toggle-pill" data-tip="Passe o mouse/toque num tipo pra ver a linha (o que ele ataca)">
-            <input type="radio" name="chart-mode" id="chart-mode-ataque" value="ataque" checked>
-            <span>ATAQUE</span>
-        </label>
-        <label class="toggle-pill" data-tip="Passe o mouse/toque num tipo pra ver a coluna (o que recebe)">
-            <input type="radio" name="chart-mode" id="chart-mode-defesa" value="defesa">
-            <span>DEFESA</span>
-        </label>
-    </div>
-
-    <div class="chart-filter">
-        <div class="chart-filter-label" id="chart-filter-label">Mostrar só estas linhas (deixe vazio pra ver todas)
-        </div>
-
-        <div class="chart-filter-options">
-            <label class="toggle-pill">
-                <input type="checkbox" id="filter-opt-comum" checked>
-                <span>COMUM</span>
-            </label>
-            <label class="toggle-pill">
-                <input type="checkbox" id="filter-opt-multiplo">
-                <span>MÚLTIPLO</span>
-            </label>
-        </div>
-
-        <div class="autocomplete-wrap">
-            <input type="text" class="px-input" id="chart-filter-input" placeholder="Digite um tipo..." autocomplete="off">
-            <div class="autocomplete-dropdown" id="chart-filter-dropdown"></div>
-        </div>
-
-        <div class="tag-chips" id="chart-filter-chips"></div>
-    </div>
 
     <div class="chart-scroll">
         <table class="type-chart" id="type-chart"></table>
