@@ -72,29 +72,58 @@ var PokemonHelperStorage = globalThis.PokemonHelperStorage || (() => {
         })
     });
 
+    // Depois de recarregar/atualizar a extensão, o content script antigo
+    // continua vivo na aba com o contexto morto: chrome.runtime.id some e
+    // qualquer chamada ao chrome.storage lança "Extension context
+    // invalidated". Degrada para os padrões e avisa uma única vez.
+    let invalidContextNotified = false;
+
+    function isContextValid() {
+        return Boolean(globalThis.chrome?.runtime?.id);
+    }
+
+    function invalidContextFallback(value) {
+        if (!invalidContextNotified) {
+            invalidContextNotified = true;
+            console.info('[Pokemon Helper] A extensão foi atualizada ou recarregada. Recarregue a página do jogo para reativar o overlay.');
+        }
+        return Promise.resolve(value);
+    }
+
     function read(key, defaults) {
+        if (!isContextValid()) return invalidContextFallback(Object.assign({}, defaults));
         return new Promise((resolve, reject) => {
-            chrome.storage.local.get(key, (result) => {
-                const error = chrome.runtime.lastError;
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(Object.assign({}, defaults, result[key] || {}));
-            });
+            try {
+                chrome.storage.local.get(key, (result) => {
+                    const error = chrome.runtime.lastError;
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(Object.assign({}, defaults, result[key] || {}));
+                });
+            } catch (error) {
+                // contexto invalidado entre a checagem e a chamada
+                resolve(invalidContextFallback(Object.assign({}, defaults)));
+            }
         });
     }
 
     function write(key, value) {
+        if (!isContextValid()) return invalidContextFallback(value);
         return new Promise((resolve, reject) => {
-            chrome.storage.local.set({ [key]: value }, () => {
-                const error = chrome.runtime.lastError;
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(value);
-            });
+            try {
+                chrome.storage.local.set({ [key]: value }, () => {
+                    const error = chrome.runtime.lastError;
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(value);
+                });
+            } catch (error) {
+                resolve(invalidContextFallback(value));
+            }
         });
     }
 
