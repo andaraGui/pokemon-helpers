@@ -54,6 +54,12 @@
 
         const container = document.createElement('div');
         container.id = ID;
+        // referência ao MESMO objeto `settings` que arrastar/redimensionar/
+        // maximizar mutam neste build() — o painel de configurações (função
+        // separada, sem acesso a este closure) usa isso pra editar o estado
+        // real em vez de uma cópia desconectada (currentSettings() lida do
+        // DOM só devolve uma leitura pontual, não o objeto vivo).
+        container.__phSettings = settings;
         applyBox(container, settings);
 
         // ---- bolha flutuante: estado recolhido (menor espaço possível na tela) ----
@@ -410,8 +416,8 @@
             #${ID} .ph-body { flex: 1; position: relative; min-height: 0; display: flex; }
             #${ID} .ph-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: none; }
             #${ID}.full-side .ph-frame { position: static; height: 100%; }
-            #${ID}.full-side #pokemon-chart-frame { display: block; flex: 1 1 auto; min-width: 0; }
-            #${ID}.full-side .ph-frame.side-active { display: block; flex: 0 0 var(--ph-side-width, 360px); border-left: 2px solid #23232f; }
+            #${ID}.full-side #pokemon-chart-frame { display: block; flex: 1 1 auto; min-width: 0; order: 0; }
+            #${ID}.full-side .ph-frame.side-active { display: block; flex: 0 0 var(--ph-side-width, 360px); border-left: 2px solid #23232f; order: 1; }
             #${ID} .ph-status {
                 flex: 0 0 auto; height: 22px;
                 display: flex; align-items: center; gap: 7px; padding: 0 8px;
@@ -591,23 +597,42 @@
             });
         });
 
+        // "largura" no painel de config é sempre a largura ENCAIXADA — com o
+        // painel expandido (F) não existe uma largura encaixada visível, então
+        // mostramos/editamos o valor guardado em `restoreWidth` (o que volta
+        // a valer quando o usuário sair do modo expandido).
+        function dockedWidth(settings) {
+            return settings.maximized ? (settings.restoreWidth || DEFAULT_SETTINGS.width) : settings.width;
+        }
+
         const widthValue = panel.querySelector('#ph-width-value');
         function applyWidth(delta) {
             const container = document.getElementById(ID);
-            if (!container) return;
-            const settings = currentSettings(container);
-            settings.width = clampNum(settings.width + delta, 250, 380, settings.width);
-            widthValue.textContent = `${settings.width}px`;
-            applyBox(container, settings);
+            // usa o MESMO objeto que arrastar/redimensionar/maximizar mutam
+            // (container.__phSettings), nunca uma cópia via currentSettings() —
+            // senão a próxima ação nesses outros caminhos reverte e persiste
+            // por cima da edição feita aqui.
+            const settings = container && container.__phSettings;
+            if (!container || !settings) return;
+            if (settings.maximized) {
+                settings.restoreWidth = clampNum(dockedWidth(settings) + delta, 250, 380, dockedWidth(settings));
+                container.dataset.restoreWidth = String(settings.restoreWidth);
+                syncFullSide(container, settings); // atualiza --ph-side-width já, pro caso o modo lado a lado esteja ativo
+            } else {
+                settings.width = clampNum(settings.width + delta, 250, 380, settings.width);
+                applyBox(container, settings);
+            }
+            widthValue.textContent = `${dockedWidth(settings)}px`;
             updateStatus(container, settings);
-            persist(settings);
+            persist(currentSettings(container));
         }
         panel.querySelector('#ph-width-minus').addEventListener('click', () => applyWidth(-20));
         panel.querySelector('#ph-width-plus').addEventListener('click', () => applyWidth(20));
         widthValue.textContent = '—';
         setTimeout(() => { // preenche após o container existir
             const container = document.getElementById(ID);
-            if (container) widthValue.textContent = `${currentSettings(container).width}px`;
+            const settings = container && container.__phSettings;
+            if (settings) widthValue.textContent = `${dockedWidth(settings)}px`;
         });
 
         const tooltipsToggle = panel.querySelector('#ph-tooltips');
@@ -659,8 +684,16 @@
             const active = container.querySelector(`#pokemon-${view}-frame`);
             if (active) active.classList.add('side-active');
         }
+        // só reposta pros iframes quando o estado de fato muda — setActiveView
+        // roda a cada payload de batalha (uma vez por turno), então sem essa
+        // guarda o postMessage inundaria os iframes com a mesma mensagem
+        // repetida durante uma luta inteira.
+        const full = settings.maximized === true;
+        const signature = `${full}|${sideBySide}`;
+        if (container.__phFullSignature === signature) return;
+        container.__phFullSignature = signature;
         container.querySelectorAll('.ph-frame').forEach((frame) => {
-            frame.contentWindow?.postMessage({ type: 'panel-mode', full: settings.maximized === true }, '*');
+            frame.contentWindow?.postMessage({ type: 'panel-mode', full }, '*');
         });
     }
 
