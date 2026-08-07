@@ -84,6 +84,14 @@ function buildSettingsPanel(shell) {
             <button type="button" class="ph-btn-shortcut px-btn" id="ph-shortcut-reset">Restaurar atalhos padrão</button>
             <button type="button" class="ph-btn-shortcut px-btn" id="ph-set-shortcut">Configurar atalho do navegador</button>
             <p class="ph-hint">Abre a página de atalhos do Chrome, onde dá pra definir a combinação que abre e fecha a extensão.</p>
+            <div class="ph-set-head">DADOS</div>
+            <button type="button" class="ph-btn-shortcut px-btn" id="ph-export">Exportar configurações</button>
+            <p class="ph-hint">Baixa um .json só com preferências (nada de pokédex ou golpes descobertos).</p>
+            <button type="button" class="ph-btn-shortcut px-btn" id="ph-import">Importar configurações</button>
+            <input type="file" id="ph-import-file" accept="application/json,.json" hidden>
+            <p class="ph-hint">Substitui as configurações atuais pelas do arquivo.</p>
+            <button type="button" class="ph-btn-shortcut px-btn" id="ph-reset-all">Restaurar tudo</button>
+            <p class="ph-data-feedback" id="ph-data-feedback"></p>
         `;
 
         panel.querySelector('#ph-set-shortcut').addEventListener('click', () => {
@@ -172,6 +180,109 @@ function buildSettingsPanel(shell) {
             }).then(() => PokemonHelperStorage.getUiPreferences())
               .then((prefs) => renderShortcutGrid(prefs.shortcuts))
               .catch((error) => console.warn('[Pokemon Helper] Não foi possível restaurar os atalhos:', error));
+        });
+
+        const dataFeedback = panel.querySelector('#ph-data-feedback');
+        function showDataFeedback(message, ok) {
+            dataFeedback.textContent = message;
+            dataFeedback.className = `ph-data-feedback ${ok ? 'ok' : 'err'}`;
+        }
+
+        panel.querySelector('#ph-export').addEventListener('click', async () => {
+            try {
+                const [ui, updatePrefs, overlay] = await Promise.all([
+                    PokemonHelperStorage.getUiPreferences(),
+                    PokemonHelperStorage.getUpdatePreferences(),
+                    PokemonHelperStorage.getOverlaySettings()
+                ]);
+                const payload = { pokemonHelperConfig: 1, uiPreferences: ui, updatePreferences: updatePrefs, overlaySettings: overlay };
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'pokemon-helper-config.json';
+                link.click();
+                URL.revokeObjectURL(link.href);
+                showDataFeedback('CONFIGURAÇÕES EXPORTADAS', true);
+            } catch (error) {
+                showDataFeedback('FALHA AO EXPORTAR', false);
+                console.warn('[Pokemon Helper] Falha ao exportar configurações:', error);
+            }
+        });
+
+        // copia recursivamente só os campos que existem nos defaults e têm o
+        // mesmo tipo — qualquer chave desconhecida do arquivo é descartada
+        function pickKnown(defaults, source) {
+            if (!source || typeof source !== 'object') return null;
+            const out = {};
+            Object.keys(defaults).forEach((key) => {
+                if (!(key in source)) return;
+                const def = defaults[key];
+                if (def !== null && typeof def === 'object') {
+                    const nested = pickKnown(def, source[key]);
+                    if (nested) out[key] = nested;
+                } else if (source[key] === null || def === null || typeof source[key] === typeof def) {
+                    out[key] = source[key];
+                }
+            });
+            return out;
+        }
+
+        panel.querySelector('#ph-import').addEventListener('click', () => panel.querySelector('#ph-import-file').click());
+        panel.querySelector('#ph-import-file').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+            try {
+                const parsed = JSON.parse(await file.text());
+                if (!parsed || parsed.pokemonHelperConfig !== 1) throw new Error('formato desconhecido');
+                const ui = pickKnown(PokemonHelperStorage.DEFAULT_UI_PREFERENCES, parsed.uiPreferences);
+                const updatePrefs = pickKnown(PokemonHelperStorage.DEFAULT_UPDATE_PREFERENCES, parsed.updatePreferences);
+                const overlay = pickKnown(PokemonHelperStorage.DEFAULT_OVERLAY_SETTINGS, parsed.overlaySettings);
+                if (ui) await PokemonHelperStorage.setUiPreferences(ui);
+                if (updatePrefs) await PokemonHelperStorage.setUpdatePreferences(updatePrefs);
+                const container = shell.getContainer();
+                if (overlay && container && container.__phSettings) {
+                    // aplica a aparência importada no painel vivo (posição/tamanho),
+                    // preservando aberto/visível da sessão atual
+                    Object.assign(container.__phSettings, overlay, { open: true, collapsed: container.__phSettings.collapsed });
+                    shell.applyBox(container, container.__phSettings);
+                    shell.updateStatus(container, container.__phSettings);
+                    shell.persist(shell.currentSettings(container));
+                }
+                const prefs = await PokemonHelperStorage.getUiPreferences();
+                renderShortcutGrid(prefs.shortcuts);
+                showDataFeedback('CONFIGURAÇÕES IMPORTADAS', true);
+            } catch (error) {
+                showDataFeedback('ARQUIVO INVÁLIDO — NADA FOI APLICADO', false);
+                console.warn('[Pokemon Helper] Falha ao importar configurações:', error);
+            }
+        });
+
+        panel.querySelector('#ph-reset-all').addEventListener('click', async () => {
+            if (!window.confirm('Restaurar TODAS as configurações do Pokemon Helper para o padrão?')) return;
+            try {
+                await PokemonHelperStorage.setUiPreferences(Object.assign({}, PokemonHelperStorage.DEFAULT_UI_PREFERENCES));
+                await PokemonHelperStorage.setUpdatePreferences(Object.assign({}, PokemonHelperStorage.DEFAULT_UPDATE_PREFERENCES));
+                const container = shell.getContainer();
+                if (container && container.__phSettings) {
+                    const defaults = PokemonHelperStorage.DEFAULT_OVERLAY_SETTINGS;
+                    Object.assign(container.__phSettings, {
+                        top: defaults.top, right: defaults.right, width: defaults.width, height: defaults.height,
+                        maximized: false, restoreWidth: null, restoreRight: null, restoreTop: null, restoreHeight: null
+                    });
+                    container.dataset.maximized = 'false';
+                    shell.applyBox(container, container.__phSettings);
+                    shell.syncFullSide(container, container.__phSettings);
+                    shell.updateStatus(container, container.__phSettings);
+                    shell.persist(shell.currentSettings(container));
+                }
+                const prefs = await PokemonHelperStorage.getUiPreferences();
+                renderShortcutGrid(prefs.shortcuts);
+                showDataFeedback('TUDO RESTAURADO PARA O PADRÃO', true);
+            } catch (error) {
+                showDataFeedback('FALHA AO RESTAURAR', false);
+                console.warn('[Pokemon Helper] Falha ao restaurar configurações:', error);
+            }
         });
 
         const notificationsToggle = panel.querySelector('#ph-update-notifications');

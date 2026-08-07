@@ -560,6 +560,9 @@
             #${ID} .ph-key-desc { font-size: 15px; color: #8a8aa0; }
             #${ID} .ph-hint { color: #8a8aa0; font-size: 13px; margin: 4px 0 12px; }
             #${ID} .ph-btn-shortcut { width: 100%; }
+            #${ID} .ph-data-feedback { font-family: 'Silkscreen', monospace; font-size: 10px; min-height: 13px; margin: 6px 0 0; }
+            #${ID} .ph-data-feedback.ok { color: #63bb5b; }
+            #${ID} .ph-data-feedback.err { color: #e06c60; }
             #${ID} .ph-resize-handle {
                 position: absolute;
                 z-index: 10;
