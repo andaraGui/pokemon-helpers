@@ -74,6 +74,27 @@
         });
     }
 
+    // Pós-atualização (atualizar.bat/ZIP): pede ao service worker pra
+    // comparar a versão do manifest no disco com a carregada e se
+    // recarregar se houver versão nova. No retorno de foco porque é o
+    // momento típico de voltar do script pro navegador.
+    if (!window.__pkmnHelperDiskCheckAdded) {
+        window.__pkmnHelperDiskCheckAdded = true;
+        const requestDiskCheck = () => {
+            try {
+                const maybePromise = chrome.runtime.sendMessage({ type: 'pkmn-helper-check-disk-version' });
+                if (maybePromise && maybePromise.catch) maybePromise.catch(() => {});
+            } catch (error) {
+                // contexto invalidado (extensão já se recarregou) — o guard
+                // do storage orienta o F5; nada a fazer aqui
+            }
+        };
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') requestDiskCheck();
+        });
+        requestDiskCheck();
+    }
+
     function build(settings) {
         injectStyle();
 

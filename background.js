@@ -194,6 +194,35 @@ async function checkForUpdates() {
     return updateCheckPromise;
 }
 
+// Recarrega a extensão quando o manifest no DISCO (atualizado por
+// atualizar.bat/git pull/ZIP) tem versão maior que a carregada: numa
+// extensão descompactada, fetch de chrome-extension:// lê o arquivo do
+// disco, enquanto getManifest() devolve o que está na memória.
+// Estritamente maior — evita loop de reload e ignora downgrade (ex.:
+// troca de branch durante o desenvolvimento).
+let lastDiskCheckAt = 0;
+
+async function checkDiskVersion() {
+    const now = Date.now();
+    if (now - lastDiskCheckAt < 5000) return;
+    lastDiskCheckAt = now;
+    try {
+        const installedManifest = chrome.runtime.getManifest();
+        const manifestName = installedManifest.browser_specific_settings
+            ? 'manifest.firefox.json'
+            : 'manifest.json';
+        const response = await fetch(chrome.runtime.getURL(manifestName), { cache: 'no-store' });
+        const diskManifest = await response.json();
+        if (!/^\d+(\.\d+)*$/.test(diskManifest.version || '')) return;
+        if (compareVersions(diskManifest.version, installedManifest.version) > 0) {
+            chrome.runtime.reload();
+        }
+    } catch (error) {
+        // pull/extração ainda em andamento ou leitura falhou — a próxima
+        // checagem (foco ou alarme) tenta de novo
+    }
+}
+
 async function initializeUpdateChecks() {
     const preferences = await PokemonHelperStorage.getUpdatePreferences();
     setUpdateAlarm(preferences.notificationsEnabled);
@@ -254,10 +283,11 @@ chrome.runtime.onMessage.addListener((msg) => {
     if (msg && msg.type === 'pkmn-helper-refresh-abilities') refreshAbilities();
     if (msg && msg.type === 'pkmn-helper-refresh-pokedex') refreshPokedex();
     if (msg && msg.type === 'pkmn-helper-refresh-trainer-moves') refreshTrainerMoves();
+    if (msg && msg.type === 'pkmn-helper-check-disk-version') checkDiskVersion();
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name === UPDATE_ALARM) checkForUpdates();
+    if (alarm.name === UPDATE_ALARM) { checkForUpdates(); checkDiskVersion(); }
     if (alarm.name === ABILITIES_ALARM) refreshAbilities(true);
     if (alarm.name === POKEDEX_ALARM) refreshPokedex(true);
     if (alarm.name === TRAINER_MOVES_ALARM) refreshTrainerMoves(true);
