@@ -245,7 +245,10 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 chrome.runtime.onMessage.addListener((msg) => {
     if (msg && msg.type === 'pkmn-helper-open-shortcuts') {
-        const isFirefox = typeof browser !== 'undefined';
+        // Chrome ≥136 também define o namespace `browser`, então só `typeof browser`
+        // não distingue mais o Firefox; `runtime.getBrowserInfo` existe só no Firefox.
+        const isFirefox = typeof browser !== 'undefined'
+            && browser.runtime && typeof browser.runtime.getBrowserInfo === 'function';
         chrome.tabs.create({ url: isFirefox ? 'about:addons' : 'chrome://extensions/shortcuts' });
     }
     if (msg && msg.type === 'pkmn-helper-refresh-abilities') refreshAbilities();
