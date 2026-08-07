@@ -7,7 +7,6 @@ time e do PC, e um painel de configurações para ajustar tudo isso do seu
 jeito.
 
 ![Overlay aberto sobre o jogo infinitymmo.net](docs/images/capa-overlay.png)
-<!-- TODO imagem: overlay aberto (aba Encontro ou Meus Pokémon) por cima do jogo, mostrando o painel flutuante -->
 
 ## Sumário
 
@@ -150,7 +149,6 @@ Mostrada assim que há um oponente capturado numa batalha.
 - Badge **GOTCHA** — substitui a seção de golpes quando a captura dá certo.
 
 ![Aba Encontro mostrando dados do oponente](docs/images/aba-encontro.png)
-<!-- TODO imagem: aba Encontro em batalha, com a caixa MELHOR JOGADA e a seção Golpes dele visíveis -->
 
 ### Calculadora
 
@@ -167,7 +165,6 @@ Mostrada assim que há um oponente capturado numa batalha.
   invertidas no modo Defesa (verde = bom para quem defende).
 
 ![Aba Calculadora com tipos selecionados](docs/images/aba-calculadora.png)
-<!-- TODO imagem: aba Calculadora com alguns tipos selecionados e o resultado agrupado por multiplicador -->
 
 ### Tabela de tipos
 
@@ -181,7 +178,6 @@ Mostrada assim que há um oponente capturado numa batalha.
 - Botão **◂ VOLTAR** — sai do modo full e retorna às abas encaixadas.
 
 ![Tabela de tipos completa em modo full](docs/images/tabela-tipos.png)
-<!-- TODO imagem: tabela de tipos 18x18 em modo full, com uma linha/coluna destacada -->
 
 ### Meus Pokémon
 
@@ -209,8 +205,7 @@ Mostrada assim que há um oponente capturado numa batalha.
     (combos Aumenta/Diminui por stat, ou "Neutras").
   - **IV mínimo** — um campo numérico (0–31) por stat.
 
-![Aba Meus Pokémon com filtros avançados abertos](docs/images/aba-meus-pokemon.png)
-<!-- TODO imagem: aba Meus Pokémon com o painel de filtros avançados aberto e alguns cards expandidos -->
+![Aba Meus Pokémon com o time expandido e detalhes abertos](docs/images/aba-meus-pokemon.png)
 
 ## Configurações
 
@@ -278,10 +273,8 @@ Encontro:
   (painel, comportamento, telas, atalhos) aos padrões de fábrica.
 
 ![Tela de Configurações com os cinco blocos](docs/images/tela-configuracoes.png)
-<!-- TODO imagem: aba Configurações mostrando os blocos PAINEL, COMPORTAMENTO e TELAS -->
 
 ![Modo full com a tabela de tipos ao lado do conteúdo](docs/images/modo-full.png)
-<!-- TODO imagem: painel em modo full (Encontro ou Calculadora) ocupando a maior parte da tela, com a tabela de tipos ao lado -->
 
 ## Atalhos de teclado
 
