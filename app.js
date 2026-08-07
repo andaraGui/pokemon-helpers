@@ -1,198 +1,191 @@
-        // TYPES, LABELS, ABBR, typeIconHTML e typeTagHTML vêm de components/type-tag.js
-        // CHART, defMultiplier, multClass e multLabel vêm de components/type-chart-data.js
+// TYPES, LABELS, ABBR, typeIconHTML e typeTagHTML vêm de components/type-tag.js
+// CHART, defMultiplier, multClass e multLabel vêm de components/type-chart-data.js
 
-        // todos os tipos possíveis: 18 puros + 153 combinações duplas
-        function allCombos() {
-            const combos = TYPES.map(t => [t]);
-            for (let i = 0; i < TYPES.length; i++) {
-                for (let j = i + 1; j < TYPES.length; j++) combos.push([TYPES[i], TYPES[j]]);
-            }
-            return combos;
-        }
-        const COMBOS = allCombos();
+// todos os tipos possíveis: 18 puros + 153 combinações duplas
+function allCombos() {
+    const combos = TYPES.map(t => [t]);
+    for (let i = 0; i < TYPES.length; i++) {
+        for (let j = i + 1; j < TYPES.length; j++) combos.push([TYPES[i], TYPES[j]]);
+    }
+    return combos;
+}
+const COMBOS = allCombos();
 
-        function multBadge(v) {
-            return `<span class="mult ${multClass(v)}">${multLabel(v)}</span>`;
-        }
+// ---------- grid de tipos (botões pixel) ----------
+const grid = document.getElementById('type-grid');
+TYPES.forEach((type) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'type-cell';
+    btn.dataset.type = type;
+    btn.dataset.tip = LABELS[type];
+    grid.appendChild(btn);
+});
 
-        // ---------- grid de checkboxes ----------
-        const grid = document.getElementById('type-grid');
-        TYPES.forEach(t => {
-            const chip = document.createElement('div');
-            chip.className = 'type-chip';
-            chip.innerHTML = `
-    <input type="checkbox" id="chk-${t}" value="${t}">
-    <label for="chk-${t}">${typeTagHTML(t, { stack: true })}</label>
-  `;
-            grid.appendChild(chip);
-        });
+// pinta a grade conforme a seleção atual (cor do tipo, ícone, borda de destaque)
+function paintGrid() {
+    const selected = getSelectedTypes();
+    grid.querySelectorAll('.type-cell').forEach((btn) => {
+        const type = btn.dataset.type;
+        const bg = PokemonPixelIcons.typeColor(type);
+        const on = selected.includes(type);
+        const fg = on ? PokemonPixelIcons.onColor(bg) : PokemonPixelIcons.mix(bg, '#ffffff', .45);
+        btn.classList.toggle('selected', on);
+        btn.style.background = on ? bg : PokemonPixelIcons.mix(bg, '#11111a', .2);
+        btn.style.color = fg;
+        btn.innerHTML = `${PokemonPixelIcons.typeIcon(type, fg)}<span>${ABBR[type]}</span>`;
+    });
+}
 
-        const hint = document.getElementById('hint');
-        const typePanelTitle = document.getElementById('type-panel-title');
+const hint = document.getElementById('hint');
 
-        function getSelectedTypes() {
-            return TYPES.filter(t => document.getElementById(`chk-${t}`).checked);
-        }
-        function getMode() {
-            return document.querySelector('input[name="mode"]:checked').value;
-        }
+// ---------- seleção do ALVO em memória (máx. 2 — o mais antigo cai) ----------
+let selectedTypes = [];
 
-        // Aplica as regras de seleção de cada modo:
-        // - "ataque": no máx. 2 tipos marcados (representam o(s) tipo(s) do ALVO, um único Pokémon)
-        // - "defesa": qualquer quantidade (representam tipos de ataque INDEPENDENTES a enfrentar)
-        function enforceModeConstraints() {
-            const mode = getMode();
-            const selected = getSelectedTypes();
-            const dualCheckbox = document.getElementById('include-dual');
-            const dualLabel = document.getElementById('include-dual-label');
+function getSelectedTypes() {
+    return selectedTypes;
+}
+function getMode() {
+    return document.querySelector('.mode-btn.active').dataset.mode;
+}
+function includeDual() {
+    return document.getElementById('include-dual').getAttribute('aria-pressed') === 'true';
+}
 
-            if (mode === 'ataque') {
-                typePanelTitle.textContent = 'Tipo do alvo (até 2)';
-                // se tiver mais de 2 marcados (ex: veio do modo defesa), desmarca os excedentes
-                if (selected.length > 2) {
-                    selected.slice(2).forEach(t => { document.getElementById(`chk-${t}`).checked = false; });
-                }
-                const nowSelected = getSelectedTypes();
-                const atLimit = nowSelected.length >= 2;
-                TYPES.forEach(t => {
-                    const chk = document.getElementById(`chk-${t}`);
-                    chk.disabled = atLimit && !chk.checked;
-                });
-                // um golpe é sempre mono-tipo: combinações não existem no modo Ataque
-                dualCheckbox.disabled = true;
-                dualCheckbox.checked = false;
-                dualLabel.classList.add('disabled-note');
-            } else {
-                typePanelTitle.textContent = 'Tipos de ataque a enfrentar';
-                TYPES.forEach(t => { document.getElementById(`chk-${t}`).disabled = false; });
-                dualCheckbox.disabled = false;
-                dualLabel.classList.remove('disabled-note');
-            }
+// Aplica as regras de cada modo (só o botão 2T muda: combinações de dois
+// tipos só existem no modo Defesa, já que um golpe é sempre mono-tipo) e
+// atualiza chips/hint antes de recalcular.
+function enforceModeConstraints() {
+    const mode = getMode();
+    const dualBtn = document.getElementById('include-dual');
 
-            const n = getSelectedTypes().length;
-            if (n === 0) {
-                hint.textContent = 'Selecione ao menos um tipo acima.';
-            } else if (mode === 'ataque') {
-                hint.textContent = n === 1
-                    ? '1 tipo selecionado (alvo mono-tipo).'
-                    : '2 tipos selecionados (alvo dual-type).';
-            } else {
-                hint.textContent = `${n} tipo(s) de ataque selecionado(s).`;
-            }
-            hint.classList.remove('warn');
+    if (mode === 'ataque') {
+        dualBtn.disabled = true;
+        dualBtn.setAttribute('aria-pressed', 'false');
+        dualBtn.dataset.tip = 'Só disponível no modo Defesa — um golpe é sempre de um tipo só.';
+    } else {
+        dualBtn.disabled = false;
+        dualBtn.dataset.tip = 'Incluir combinações de dois tipos (ex: Água/Voador)';
+    }
 
-            calculate();
-        }
+    paintGrid();
+    renderTargetChips();
 
-        grid.addEventListener('change', enforceModeConstraints);
-        document.getElementById('mode-ataque').addEventListener('change', enforceModeConstraints);
-        document.getElementById('mode-defesa').addEventListener('change', enforceModeConstraints);
-        document.getElementById('include-dual').addEventListener('change', calculate);
-        enforceModeConstraints();
+    const n = selectedTypes.length;
+    if (n === 0) {
+        hint.textContent = 'Selecione ao menos um tipo acima.';
+    } else if (mode === 'ataque') {
+        hint.textContent = n === 1
+            ? '1 tipo selecionado (alvo mono-tipo).'
+            : '2 tipos selecionados (alvo dual-type).';
+    } else {
+        hint.textContent = `${n} tipo(s) de ataque selecionado(s).`;
+    }
 
-        function includeDual() {
-            return document.getElementById('include-dual').checked;
-        }
+    calculate();
+}
 
-        function calculate() {
-            const selected = getSelectedTypes();
-            const mode = getMode();
+// preenche os chips do ALVO e o tooltip da linha com o resumo da seleção
+function renderTargetChips() {
+    const chips = document.getElementById('target-chips');
+    const row = document.getElementById('target-row');
+    chips.innerHTML = selectedTypes.map((type) => typeTagHTML(type)).join('');
+    if (selectedTypes.length === 0) {
+        row.dataset.tip = 'Selecione até 2 tipos do alvo.';
+    } else {
+        const names = selectedTypes.map((type) => LABELS[type]).join(' / ');
+        row.dataset.tip = selectedTypes.length === 2 ? `Alvo: ${names} (duplo)` : `Alvo: ${names}`;
+    }
+}
 
-            if (selected.length === 0) {
-                document.getElementById('results').style.display = 'none';
-                return;
-            }
+grid.addEventListener('click', (event) => {
+    const btn = event.target.closest('.type-cell');
+    if (!btn) return;
+    const type = btn.dataset.type;
+    const idx = selectedTypes.indexOf(type);
+    if (idx >= 0) {
+        selectedTypes.splice(idx, 1);
+    } else {
+        selectedTypes.push(type);
+        if (selectedTypes.length > 2) selectedTypes.shift(); // descarta o mais antigo
+    }
+    enforceModeConstraints();
+});
 
-            if (mode === 'ataque') {
-                // "selected" = o(s) tipo(s) do ALVO. Um golpe é sempre de 1 tipo só, então
-                // combinações não existem nesse modo — a checkbox de duplos não se aplica aqui.
-                const entries = TYPES.map(t => {
-                    const dano = defMultiplier(t, selected);
-                    const recebe = Math.max(...selected.map(s => defMultiplier(s, [t])));
-                    return { combo: [t], dano, recebe };
-                });
-                renderAtaque(entries, selected);
-            } else {
-                // "selected" = lista de tipos de ATAQUE independentes a enfrentar.
-                // Aqui os tipos duplos combinam de verdade na defesa. COMBOS já inclui os
-                // 18 tipos puros + 153 duplos — ligar a checkbox nunca remove os puros,
-                // só adiciona os duplos à lista.
-                const candidates = includeDual() ? COMBOS : TYPES.map(t => [t]);
-                const entries = candidates.map(combo => {
-                    // recebe: PIOR multiplicador que esse combo toma de qualquer um dos tipos selecionados
-                    const recebe = Math.max(...selected.map(s => defMultiplier(s, combo)));
-                    return { combo, recebe };
-                });
-                renderDefesa(entries, selected);
-            }
-        }
+function setMode(mode) {
+    document.getElementById('mode-ataque').classList.toggle('active', mode === 'ataque');
+    document.getElementById('mode-defesa').classList.toggle('active', mode === 'defesa');
+    enforceModeConstraints();
+}
+document.getElementById('mode-ataque').addEventListener('click', () => setMode('ataque'));
+document.getElementById('mode-defesa').addEventListener('click', () => setMode('defesa'));
 
-        function renderAtaque(entries, target) {
-            const body = document.getElementById('results-body');
-            const title = document.getElementById('results-title');
-            title.textContent = 'Resultado — tipos agrupados por dano causado no alvo';
+document.getElementById('include-dual').addEventListener('click', (event) => {
+    const btn = event.currentTarget;
+    if (btn.disabled) return;
+    const on = btn.getAttribute('aria-pressed') === 'true';
+    btn.setAttribute('aria-pressed', String(!on));
+    calculate();
+});
 
-            const banner = `<div class="target-banner">Alvo: ${typeTagHTML(target, { stack: true })}</div>`;
+document.getElementById('clear-selection').addEventListener('click', () => {
+    selectedTypes = [];
+    enforceModeConstraints();
+});
 
-            const TIERS = [4, 2, 0.5, 0.25, 0];
-            const tierRows = TIERS.map(tierValue => {
-                const group = entries
-                    .filter(e => e.dano === tierValue)
-                    .sort((a, b) => a.recebe - b.recebe); // dentro da faixa, quem recebe menos vem primeiro
+enforceModeConstraints();
 
-                if (group.length === 0) return '';
+function calculate() {
+    const selected = getSelectedTypes();
+    const mode = getMode();
+    const results = document.getElementById('results');
 
-                const tags = group.map(e => `<span class="tier-entry">${typeTagHTML(e.combo, { stack: true })}</span>`).join('');
+    if (selected.length === 0) {
+        results.style.display = 'none';
+        return;
+    }
 
-                return `
-      <div class="tier-row">
-        <div class="tier-label">${multBadge(tierValue)}</div>
-        <div class="tier-list">${tags}</div>
-      </div>
-    `;
-            }).join('');
+    let entries;
+    if (mode === 'ataque') {
+        // "selected" = o(s) tipo(s) do ALVO. Um golpe é sempre de 1 tipo só, então
+        // combinações não existem nesse modo — o botão 2T não se aplica aqui.
+        entries = TYPES.map((t) => ({ combo: [t], value: defMultiplier(t, selected) }));
+    } else {
+        // "selected" = lista de tipos de ATAQUE independentes a enfrentar.
+        // Aqui os tipos duplos combinam de verdade na defesa. COMBOS já inclui os
+        // 18 tipos puros + 153 duplos — ligar o 2T nunca remove os puros, só
+        // adiciona os duplos à lista.
+        const candidates = includeDual() ? COMBOS : TYPES.map((t) => [t]);
+        entries = candidates.map((combo) => ({
+            // pior multiplicador que esse combo toma de qualquer um dos tipos selecionados
+            combo,
+            value: Math.max(...selected.map((s) => defMultiplier(s, combo))),
+        }));
+    }
 
-            body.innerHTML = banner + tierRows;
-            document.getElementById('results').style.display = 'block';
-        }
+    document.getElementById('results-body').innerHTML = renderGroupedResults(entries);
+    results.style.display = 'block';
+}
 
-        // mesmas faixas de multiplicador do Ataque, mas cores invertidas:
-        // aqui, multiplicador BAIXO é bom (você recebe pouco dano) e ALTO é ruim.
-        function multClassDefesa(v) {
-            if (v === 0 || v === 0.25) return 'mult-4';   // melhor caso: imune ou 1/4
-            if (v === 0.5) return 'mult-2';                // resiste
-            if (v === 1) return 'mult-1';                  // neutro
-            if (v === 2) return 'mult-0-5';                // fraco contra
-            return 'mult-0-25';                            // v === 4, pior caso
-        }
-        function multBadgeDefesa(v) {
-            return `<span class="mult ${multClassDefesa(v)}">${multLabel(v)}</span>`;
-        }
+// agrupa as entradas já calculadas (ataque: dano causado; defesa: pior dano
+// recebido) por valor de multiplicador e renderiza uma linha por faixa
+function renderGroupedResults(entries) {
+    const order = [4, 2, 1, .5, .25, 0];
+    const byValue = new Map(order.map((value) => [value, []]));
+    entries.forEach(({ combo, value }) => { if (byValue.has(value)) byValue.get(value).push(combo); });
+    return `<div class="calc-rows">` + order
+        .filter((value) => byValue.get(value).length)
+        .map((value) => `<div class="calc-row">
+            <span class="calc-mult ${multClass(value)}">${multLabel(value)}</span>
+            <span class="calc-types">${byValue.get(value).slice(0, 24).map((combo) => typeTagHTML(combo)).join('')}</span>
+        </div>`).join('') + `</div>`;
+}
 
-        function renderDefesa(entries, selected) {
-            const body = document.getElementById('results-body');
-            const title = document.getElementById('results-title');
-            title.textContent = 'Resultado — tipos agrupados pelo pior dano recebido';
-
-            const banner = `<div class="target-banner">Enfrentando: ${selected.map(t => typeTagHTML(t, { stack: true })).join(' ')}</div>`;
-
-            // ordem do melhor pro pior caso de defesa
-            const TIERS = [0, 0.25, 0.5, 2, 4];
-
-            const tierRows = TIERS.map(tierValue => {
-                const group = entries.filter(e => e.recebe === tierValue);
-                if (group.length === 0) return '';
-
-                const tags = group.map(e => typeTagHTML(e.combo, { stack: true })).join('');
-
-                return `
-      <div class="tier-row">
-        <div class="tier-label">${multBadgeDefesa(tierValue)}</div>
-        <div class="tier-list">${tags}</div>
-      </div>
-    `;
-            }).join('');
-
-            body.innerHTML = banner + tierRows;
-            document.getElementById('results').style.display = 'block';
-        }
+// atalhos do painel: repassa a tecla pro shell (iframe -> parent) trocar de aba
+window.addEventListener('keydown', (event) => {
+    if (/INPUT|TEXTAREA/.test(event.target.tagName)) return;
+    const key = event.key.toLowerCase();
+    if (['e', 'c', 't', 'm', ',', 'f', 'escape'].includes(key)) {
+        window.parent.postMessage({ type: 'panel-shortcut', key }, '*');
+    }
+});
