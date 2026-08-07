@@ -59,7 +59,7 @@ var PokemonIvEvaluation = globalThis.PokemonIvEvaluation || (() => {
     }
 
     function labelHTML() {
-        return `Avaliação [BETA] <span class="ability-info evaluation-info" tabindex="0" role="img" aria-label="${TOOLTIP}" data-tooltip="${TOOLTIP}">ⓘ</span>`;
+        return `Avaliação [BETA] ${PokemonHelperTooltip.iconHTML(TOOLTIP)}`;
     }
 
     return Object.freeze({ evaluate, html, labelHTML, roleFor });

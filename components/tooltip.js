@@ -1,8 +1,11 @@
 // ---------------------------------------------------------------------------
-// Tooltip global do design system v2: caixa fixa exibida abaixo de qualquer
+// Tooltip global do design system v2: caixa fixa exibida junto de qualquer
 // elemento com data-tip, por delegação de eventos. Respeita a preferência
 // tooltipsEnabled (Configurações) e reage a mudanças dela em tempo real.
 // Injeta o próprio <style> pra funcionar tanto nos iframes quanto no shell.
+// A caixa nunca sai da viewport: clampa na horizontal e vira pra cima quando
+// não há espaço abaixo do elemento.
+// iconHTML() é o marcador ⓘ padrão — todo tooltip com ícone deve usá-lo.
 // ---------------------------------------------------------------------------
 var PokemonHelperTooltip = globalThis.PokemonHelperTooltip || (() => {
     let enabled = true;
@@ -17,10 +20,16 @@ var PokemonHelperTooltip = globalThis.PokemonHelperTooltip || (() => {
         });
     }
 
-    function ensureBox(doc) {
-        let box = doc.getElementById('px-tooltip');
-        if (box) return box;
+    const escapeHtml = (value) => String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+
+    function iconHTML(text) {
+        return `<span class="px-tip-icon" tabindex="0" role="img" aria-label="${escapeHtml(text)}" data-tip="${escapeHtml(text)}">ⓘ</span>`;
+    }
+
+    function ensureStyle(doc) {
+        if (doc.getElementById('px-tooltip-style')) return;
         const style = doc.createElement('style');
+        style.id = 'px-tooltip-style';
         style.textContent = `
             #px-tooltip {
                 position: fixed; z-index: 2147483647; max-width: 260px;
@@ -28,8 +37,15 @@ var PokemonHelperTooltip = globalThis.PokemonHelperTooltip || (() => {
                 box-shadow: 2px 2px 0 rgba(0,0,0,.5);
                 font-family: 'Pixelify Sans', monospace; font-size: 15px; line-height: 1.35;
                 color: #e6e6f0; pointer-events: none; display: none; white-space: pre-line;
-            }`;
+            }
+            .px-tip-icon { color: var(--px-info, #79b8ff); cursor: help; outline: none; }`;
         doc.head.appendChild(style);
+    }
+
+    function ensureBox(doc) {
+        let box = doc.getElementById('px-tooltip');
+        if (box) return box;
+        ensureStyle(doc);
         box = doc.createElement('div');
         box.id = 'px-tooltip';
         // appendado no <html>, não no <body>: no content script do jogo o
@@ -40,9 +56,25 @@ var PokemonHelperTooltip = globalThis.PokemonHelperTooltip || (() => {
         return box;
     }
 
+    function position(box, rect, win) {
+        // zera a posição antes de medir: um left herdado perto da borda direita
+        // comprimiria a caixa (shrink-to-fit) e a medida sairia errada
+        box.style.left = '0px';
+        box.style.top = '0px';
+        const width = box.offsetWidth, height = box.offsetHeight;
+        const left = Math.max(4, Math.min(rect.left, win.innerWidth - width - 4));
+        let top = rect.bottom + 5;
+        if (top + height > win.innerHeight - 4) top = Math.max(4, rect.top - height - 5);
+        box.style.left = `${left}px`;
+        box.style.top = `${top}px`;
+    }
+
     function attach(doc) {
         if (doc.__pxTooltipAttached) return;
         doc.__pxTooltipAttached = true;
+        // o estilo do .px-tip-icon precisa existir já no primeiro render,
+        // não só no primeiro hover (quando a caixa é criada)
+        ensureStyle(doc);
         const win = doc.defaultView;
         doc.addEventListener('mouseover', (event) => {
             const target = event.target.closest && event.target.closest('[data-tip]');
@@ -50,11 +82,9 @@ var PokemonHelperTooltip = globalThis.PokemonHelperTooltip || (() => {
             const text = target.getAttribute('data-tip');
             if (!text) return;
             const box = ensureBox(doc);
-            const rect = target.getBoundingClientRect();
             box.textContent = text;
-            box.style.left = `${Math.max(4, Math.min(rect.left, win.innerWidth - 280))}px`;
-            box.style.top = `${rect.bottom + 5}px`;
             box.style.display = 'block';
+            position(box, target.getBoundingClientRect(), win);
         });
         doc.addEventListener('mouseout', (event) => {
             if (event.target.closest && event.target.closest('[data-tip]')) {
@@ -64,6 +94,10 @@ var PokemonHelperTooltip = globalThis.PokemonHelperTooltip || (() => {
         });
     }
 
-    return Object.freeze({ attach });
+    return Object.freeze({ attach, iconHTML });
 })();
 globalThis.PokemonHelperTooltip = PokemonHelperTooltip;
+// auto-attach: páginas de extensão (MV3) bloqueiam <script> inline por CSP,
+// então o attach precisa acontecer aqui; no content script o attach explícito
+// vira no-op graças ao guard __pxTooltipAttached.
+PokemonHelperTooltip.attach(document);

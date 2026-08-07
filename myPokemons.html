@@ -19,7 +19,6 @@
     <link rel="stylesheet" href="components/nature-effect.css">
     <link rel="stylesheet" href="components/pokemon-filters.css">
     <link rel="stylesheet" href="components/update-notice.css">
-    <link rel="stylesheet" href="components/ability-info.css">
 
     <style>
         * { box-sizing: border-box; }
@@ -58,7 +57,7 @@
         .detail-row { display: flex; gap: 6px; min-width: 0; align-items: baseline; }
         .detail-key { font-family: var(--px-font-mono); font-size: 8px; color: var(--px-text-dim); width: 62px; flex: 0 0 auto; text-transform: uppercase; }
         .detail-val { font-size: 15px; color: var(--px-text-val); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-        /* habilidade injeta um ⓘ com tooltip próprio (ability-info.css) —
+        /* habilidade injeta o ⓘ padrão (components/tooltip.js) —
            sem isso o ícone fica cortado pelo ellipsis da linha */
         .detail-val[data-ability] { overflow: visible; white-space: normal; }
         .nat-mod { font-family: var(--px-font-mono); font-size: 8px; padding: 2px 4px; background: var(--px-bg-btn2); }
@@ -104,7 +103,6 @@
 
     <script src="data/extension-storage.js"></script>
     <script src="components/tooltip.js"></script>
-    <script>PokemonHelperTooltip.attach(document);</script>
     <script src="components/update-notice.js"></script>
     <script src="components/pixel-icon.js"></script>
     <script src="components/type-tag.js"></script>
