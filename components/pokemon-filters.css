@@ -237,7 +237,7 @@
    pokemon-filters.js continua usando as classes v1 (.pxl-input/.pxl-btn)
    pra inputs/selects e pros botões Limpar/Aplicar — como o componente é
    compartilhado e não pode ser editado aqui, a rescala pro visual v2 (flat,
-   borda 1px, Silkscreen/Pixelify) é feita via override escopado a este
+   borda 1px, Silkscreen) é feita via override escopado a este
    painel, sem mexer em pokemon-filters.js.
 ----------------------------------------------------------------------- */
 .pokemon-advanced-filters .pxl-input {
@@ -248,7 +248,7 @@
     color: var(--px-text);
     box-shadow: none;
     padding: 6px 8px;
-    font-size: 15px;
+    font-size: 12px;
 }
 
 .pokemon-advanced-filters .pxl-input::placeholder {

@@ -35,7 +35,7 @@ var PokemonHelperTooltip = globalThis.PokemonHelperTooltip || (() => {
                 position: fixed; z-index: 2147483647; max-width: 260px;
                 padding: 6px 9px; background: #08080d; border: 1px solid #3a3a4c;
                 box-shadow: 2px 2px 0 rgba(0,0,0,.5);
-                font-family: 'Pixelify Sans', monospace; font-size: 15px; line-height: 1.35;
+                font-family: 'Silkscreen', monospace; font-size: 12px; line-height: 1.35;
                 color: #e6e6f0; pointer-events: none; display: none; white-space: pre-line;
             }
             .px-tip-icon { color: var(--px-info, #79b8ff); cursor: help; outline: none; }`;
