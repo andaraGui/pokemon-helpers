@@ -39,7 +39,8 @@ function paintGrid() {
 
 const hint = document.getElementById('hint');
 
-// ---------- seleção do ALVO em memória (máx. 2 — o mais antigo cai) ----------
+// ---------- seleção em memória: ALVO no Ataque (máx. 2, mais antigo cai) ----------
+// ---------- ou tipos de ataque a enfrentar na Defesa (sem limite) ----------
 let selectedTypes = [];
 
 function getSelectedTypes() {
@@ -82,22 +83,37 @@ function enforceModeConstraints() {
             ? '1 tipo selecionado (alvo mono-tipo).'
             : '2 tipos selecionados (alvo dual-type).';
     } else {
-        hint.textContent = `${n}/2 tipos de ataque selecionados (até 2).`;
+        hint.textContent = `${n} tipo(s) de ataque selecionado(s) (sem limite).`;
     }
 
     calculate();
 }
 
-// preenche os chips do ALVO e o tooltip da linha com o resumo da seleção
+// preenche os chips e o tooltip/label da linha com o resumo da seleção —
+// no modo Ataque é o ALVO (até 2 tipos); no modo Defesa é a lista de
+// ataques independentes a enfrentar (sem limite de quantidade)
 function renderTargetChips() {
     const chips = document.getElementById('target-chips');
     const row = document.getElementById('target-row');
+    const label = document.getElementById('target-label');
     chips.innerHTML = selectedTypes.map((type) => typeTagHTML(type)).join('');
-    if (selectedTypes.length === 0) {
-        row.dataset.tip = 'Selecione até 2 tipos do alvo.';
+
+    if (getMode() === 'ataque') {
+        label.textContent = 'ALVO';
+        if (selectedTypes.length === 0) {
+            row.dataset.tip = 'Selecione até 2 tipos do alvo.';
+        } else {
+            const names = selectedTypes.map((type) => LABELS[type]).join(' / ');
+            row.dataset.tip = selectedTypes.length === 2 ? `Alvo: ${names} (duplo)` : `Alvo: ${names}`;
+        }
     } else {
-        const names = selectedTypes.map((type) => LABELS[type]).join(' / ');
-        row.dataset.tip = selectedTypes.length === 2 ? `Alvo: ${names} (duplo)` : `Alvo: ${names}`;
+        label.textContent = 'ATAQUES';
+        if (selectedTypes.length === 0) {
+            row.dataset.tip = 'Selecione um ou mais tipos de ataque a enfrentar (sem limite).';
+        } else {
+            const names = selectedTypes.map((type) => LABELS[type]).join(' / ');
+            row.dataset.tip = `Enfrentando: ${names}`;
+        }
     }
 }
 
@@ -110,12 +126,20 @@ grid.addEventListener('click', (event) => {
         selectedTypes.splice(idx, 1);
     } else {
         selectedTypes.push(type);
-        if (selectedTypes.length > 2) selectedTypes.shift(); // descarta o mais antigo
+        // no modo Ataque o alvo é sempre 1 ou 2 tipos: o mais antigo cai.
+        // no modo Defesa qualquer quantidade de tipos de ataque pode ser
+        // marcada (são ataques independentes, não um único "alvo").
+        if (getMode() === 'ataque' && selectedTypes.length > 2) selectedTypes.shift();
     }
     enforceModeConstraints();
 });
 
 function setMode(mode) {
+    // ao trocar pra Ataque vindo de Defesa com mais de 2 tipos marcados,
+    // mantém só os 2 mais recentes (Defesa não tem limite de seleção)
+    if (mode === 'ataque' && selectedTypes.length > 2) {
+        selectedTypes = selectedTypes.slice(-2);
+    }
     document.getElementById('mode-ataque').classList.toggle('active', mode === 'ataque');
     document.getElementById('mode-defesa').classList.toggle('active', mode === 'defesa');
     enforceModeConstraints();
@@ -166,14 +190,31 @@ function calculate() {
         }));
     }
 
-    document.getElementById('results-body').innerHTML = renderGroupedResults(entries);
+    document.getElementById('results-body').innerHTML = renderGroupedResults(entries, mode);
     results.style.display = 'block';
 }
 
+// mesmas faixas de cor do modo Ataque (classes .mult-* de pixel-theme.css),
+// mas cruzadas: aqui multiplicador BAIXO é bom (você recebe pouco dano) e
+// ALTO é ruim, então os tons verdes/vermelhos são reaproveitados invertidos
+function multClassDefesa(v) {
+    if (v === 0 || v === 0.25) return 'mult-4';   // melhor caso: imune ou 1/4
+    if (v === 0.5) return 'mult-2';                // resiste
+    if (v === 1) return 'mult-1';                  // neutro (não exibido na Defesa)
+    if (v === 2) return 'mult-0-5';                // fraco contra
+    return 'mult-0-25';                            // v === 4, pior caso
+}
+
 // agrupa as entradas já calculadas (ataque: dano causado; defesa: pior dano
-// recebido) por valor de multiplicador e renderiza uma linha por faixa
-function renderGroupedResults(entries) {
-    const order = [4, 2, 1, .5, .25, 0];
+// recebido) por valor de multiplicador e renderiza uma linha por faixa.
+// Ataque: ordem 4x→0x, verde = dano alto causado (mockup atual, inalterado).
+// Defesa: ordem 0x→4x (melhor defensor primeiro), verde = resiste/imune,
+// vermelho = fraco — semântica antiga (pré-redesign) restaurada por decisão
+// do usuário. O 1x fica de fora da Defesa (não aparecia na versão antiga:
+// não é nem resistência nem fraqueza, então não ajuda a decisão).
+function renderGroupedResults(entries, mode) {
+    const order = mode === 'defesa' ? [0, .25, .5, 2, 4] : [4, 2, 1, .5, .25, 0];
+    const classFor = mode === 'defesa' ? multClassDefesa : multClass;
     const byValue = new Map(order.map((value) => [value, []]));
     entries.forEach(({ combo, value }) => { if (byValue.has(value)) byValue.get(value).push(combo); });
     return `<div class="calc-rows">` + order
@@ -184,7 +225,7 @@ function renderGroupedResults(entries) {
                 ? `<span class="calc-more" data-tip="Mais ${combos.length - 24} combinações neste grupo">+${combos.length - 24}</span>`
                 : '';
             return `<div class="calc-row">
-            <span class="calc-mult ${multClass(value)}">${multLabel(value)}</span>
+            <span class="calc-mult ${classFor(value)}">${multLabel(value)}</span>
             <span class="calc-types">${combos.slice(0, 24).map((combo) => typeTagHTML(combo)).join('')}${overflow}</span>
         </div>`;
         }).join('') + `</div>`;

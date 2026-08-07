@@ -247,3 +247,18 @@ unpacked (Chrome e Firefox), exercitando: as 4 abas + config, atalhos de
 teclado, modo full em cada aba, tooltips on/off, redimensionar (stepper e
 arrasto), encontro real (payload interceptado), filtros e grupos em Meus
 Pokémon, taxa de captura, e conferindo os dois manifests + build scripts.
+
+## Decisões pós-implementação (2026-08-07)
+
+- O redesign inverteu sem querer a apresentação do modo Defesa da
+  calculadora. Por decisão do usuário, a semântica antiga (pré-redesign) foi
+  restaurada: os melhores defensores aparecem primeiro (0×→¼×→½×→2×→4×, sem
+  o 1× — igual à versão antiga), com verde para quem resiste/é imune e
+  vermelho para quem é fraco. O modo Ataque segue o mockup atual, sem
+  mudanças (até 2 tipos de alvo, 4×→0×, verde = dano alto causado).
+- O multi-select de tipos de ataque no modo Defesa também foi restaurado:
+  qualquer quantidade de tipos pode ser marcada (sem limite), já que
+  representam ataques independentes a enfrentar, não um alvo único. O modo
+  Ataque mantém o limite de 2 com descarte do mais antigo; ao trocar de
+  Defesa pra Ataque com mais de 2 marcados, ficam os 2 selecionados mais
+  recentemente.
