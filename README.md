@@ -48,8 +48,9 @@ atualizações futuras ficam mais fáceis (veja [Atualização](#atualização))
    pasta extraída que contém o arquivo `manifest.json`.
 8. Deixe a extensão ativada.
 
-![Tela chrome://extensions com o botão Carregar sem compactação](docs/images/instalacao-load-unpacked.png)
-<!-- TODO imagem: chrome://extensions com Modo do desenvolvedor ativo e o botão "Carregar sem compactação" em destaque -->
+> Em caso de dúvida nos passos 5-7, a
+> [documentação oficial do Chrome](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world?hl=pt-br#load-unpacked)
+> mostra com capturas de tela como carregar uma extensão sem compactação.
 
 ### Opção 2: com Git
 
