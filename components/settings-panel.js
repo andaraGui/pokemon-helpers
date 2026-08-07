@@ -232,12 +232,16 @@ function buildSettingsPanel(shell) {
             const file = event.target.files[0];
             event.target.value = '';
             if (!file) return;
+            // vira true assim que a primeira gravação (storage ou DOM) começa —
+            // a partir daí um erro não quer dizer mais "nada foi aplicado"
+            let writesStarted = false;
             try {
                 const parsed = JSON.parse(await file.text());
                 if (!parsed || parsed.pokemonHelperConfig !== 1) throw new Error('formato desconhecido');
                 const ui = pickKnown(PokemonHelperStorage.DEFAULT_UI_PREFERENCES, parsed.uiPreferences);
                 const updatePrefs = pickKnown(PokemonHelperStorage.DEFAULT_UPDATE_PREFERENCES, parsed.updatePreferences);
                 const overlay = pickKnown(PokemonHelperStorage.DEFAULT_OVERLAY_SETTINGS, parsed.overlaySettings);
+                writesStarted = true;
                 if (ui) await PokemonHelperStorage.setUiPreferences(ui);
                 if (updatePrefs) await PokemonHelperStorage.setUpdatePreferences(updatePrefs);
                 const container = shell.getContainer();
@@ -245,7 +249,17 @@ function buildSettingsPanel(shell) {
                     // aplica a aparência importada no painel vivo (posição/tamanho),
                     // preservando aberto/visível da sessão atual
                     Object.assign(container.__phSettings, overlay, { open: true, collapsed: container.__phSettings.collapsed });
+                    // mesma sincronização dataset <-> __phSettings que "Restaurar tudo"
+                    // faz logo abaixo: sem isso currentSettings() lê maximized/restore*
+                    // velhos do dataset (nunca tocado aqui) e persiste um estado
+                    // incoerente com o que a tela acabou de mostrar
+                    container.dataset.maximized = String(container.__phSettings.maximized === true);
+                    container.dataset.restoreWidth = String(container.__phSettings.restoreWidth || '');
+                    container.dataset.restoreRight = String(container.__phSettings.restoreRight ?? '');
+                    container.dataset.restoreTop = String(container.__phSettings.restoreTop ?? '');
+                    container.dataset.restoreHeight = String(container.__phSettings.restoreHeight || '');
                     shell.applyBox(container, container.__phSettings);
+                    shell.syncFullSide(container, container.__phSettings);
                     shell.updateStatus(container, container.__phSettings);
                     shell.persist(shell.currentSettings(container));
                 }
@@ -253,7 +267,15 @@ function buildSettingsPanel(shell) {
                 renderShortcutGrid(prefs.shortcuts);
                 showDataFeedback('CONFIGURAÇÕES IMPORTADAS', true);
             } catch (error) {
-                showDataFeedback('ARQUIVO INVÁLIDO — NADA FOI APLICADO', false);
+                // antes de qualquer gravação (JSON inválido ou marcador ausente):
+                // nada foi tocado. Depois: alguma gravação pode ter ido pro storage
+                // antes da falha, então não dá pra prometer que nada foi aplicado
+                showDataFeedback(
+                    writesStarted
+                        ? 'FALHA AO IMPORTAR — CONFIG PODE TER SIDO APLICADA EM PARTE'
+                        : 'ARQUIVO INVÁLIDO — NADA FOI APLICADO',
+                    false
+                );
                 console.warn('[Pokemon Helper] Falha ao importar configurações:', error);
             }
         });
