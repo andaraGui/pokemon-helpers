@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST="$ROOT/dist/chrome"
-ZIP="$ROOT/dist/pokemon-helper-chrome.zip"
+ZIP="$ROOT/dist/infinity-mmo-extension-chrome.zip"
 
 rm -rf "$DIST"
 mkdir -p "$DIST"
