@@ -29,6 +29,54 @@ function buildSettingsPanel(shell) {
                 <span class="ph-setting-label" id="ph-tooltips-label">Tooltips ao passar o mouse</span>
                 <button type="button" class="ph-toggle" id="ph-tooltips" role="switch" aria-checked="true" aria-labelledby="ph-tooltips-label"></button>
             </div>
+            <div class="ph-set-head">COMPORTAMENTO</div>
+            <div class="ph-setting-row" data-tip="Qual aba o painel mostra ao carregar a página.">
+                <span class="ph-setting-label">View inicial</span>
+                <button type="button" class="ph-cycle" id="ph-start-view"></button>
+            </div>
+            <div class="ph-setting-row" data-tip="Se o painel começa aberto ou como bolha ao carregar a página.">
+                <span class="ph-setting-label">Estado ao abrir</span>
+                <button type="button" class="ph-cycle" id="ph-start-collapsed"></button>
+            </div>
+            <div class="ph-setting-row" data-tip="Trocar sozinho pra aba Encontro quando uma batalha começa.">
+                <span class="ph-setting-label" id="ph-auto-battle-label">Auto-troca no encontro</span>
+                <button type="button" class="ph-toggle" id="ph-auto-battle" role="switch" aria-checked="true" aria-labelledby="ph-auto-battle-label"></button>
+            </div>
+            <div class="ph-set-head">TELAS</div>
+            <div class="ph-subhead">MEUS POKÉMON</div>
+            <div class="ph-setting-row">
+                <span class="ph-setting-label" id="ph-mp-groups-label">Grupos já expandidos</span>
+                <button type="button" class="ph-toggle" id="ph-mp-groups" role="switch" aria-checked="true" aria-labelledby="ph-mp-groups-label"></button>
+            </div>
+            <div class="ph-setting-row">
+                <span class="ph-setting-label" id="ph-mp-pokemon-label">Pokémon já expandidos</span>
+                <button type="button" class="ph-toggle" id="ph-mp-pokemon" role="switch" aria-checked="false" aria-labelledby="ph-mp-pokemon-label"></button>
+            </div>
+            <div class="ph-subhead">BATALHA</div>
+            <div class="ph-setting-row">
+                <span class="ph-setting-label" id="ph-bt-stats-label">IVs / Stats</span>
+                <button type="button" class="ph-toggle" id="ph-bt-stats" role="switch" aria-checked="true" aria-labelledby="ph-bt-stats-label"></button>
+            </div>
+            <div class="ph-setting-row">
+                <span class="ph-setting-label" id="ph-bt-weak-label">Fraquezas dele</span>
+                <button type="button" class="ph-toggle" id="ph-bt-weak" role="switch" aria-checked="true" aria-labelledby="ph-bt-weak-label"></button>
+            </div>
+            <div class="ph-setting-row">
+                <span class="ph-setting-label" id="ph-bt-moves-label">Golpes dele</span>
+                <button type="button" class="ph-toggle" id="ph-bt-moves" role="switch" aria-checked="true" aria-labelledby="ph-bt-moves-label"></button>
+            </div>
+            <div class="ph-setting-row">
+                <span class="ph-setting-label" id="ph-bt-balls-label">Pokébolas</span>
+                <button type="button" class="ph-toggle" id="ph-bt-balls" role="switch" aria-checked="true" aria-labelledby="ph-bt-balls-label"></button>
+            </div>
+            <div class="ph-setting-row">
+                <span class="ph-setting-label" id="ph-bt-stages-label">Atributos alterados</span>
+                <button type="button" class="ph-toggle" id="ph-bt-stages" role="switch" aria-checked="true" aria-labelledby="ph-bt-stages-label"></button>
+            </div>
+            <div class="ph-setting-row">
+                <span class="ph-setting-label" id="ph-bt-mymoves-label">Seus golpes</span>
+                <button type="button" class="ph-toggle" id="ph-bt-mymoves" role="switch" aria-checked="true" aria-labelledby="ph-bt-mymoves-label"></button>
+            </div>
             <div class="ph-set-head">ATALHOS</div>
             <div class="ph-shortcut-grid">
                 ${[['E', 'Encontro atual'], ['C', 'Calculadora de tipos'], ['M', 'Meus Pokémon'], [',', 'Configurações'],
@@ -50,6 +98,34 @@ function buildSettingsPanel(shell) {
 
         function setToggleState(toggle, enabled) {
             toggle.setAttribute('aria-checked', String(enabled));
+        }
+
+        // botão que cicla entre opções [{value, label}] e persiste via save(value)
+        function bindCycle(id, options, current, save) {
+            const btn = panel.querySelector(`#${id}`);
+            let index = Math.max(0, options.findIndex((option) => option.value === current));
+            const paint = () => { btn.textContent = options[index].label; };
+            paint();
+            btn.addEventListener('click', () => {
+                index = (index + 1) % options.length;
+                paint();
+                save(options[index].value).catch((error) => {
+                    console.warn('[Pokemon Helper] Não foi possível salvar a preferência:', error);
+                });
+            });
+        }
+
+        function bindPrefToggle(id, current, save) {
+            const toggle = panel.querySelector(`#${id}`);
+            setToggleState(toggle, current);
+            toggle.addEventListener('click', () => {
+                const enabled = toggle.getAttribute('aria-checked') !== 'true';
+                setToggleState(toggle, enabled);
+                save(enabled).catch((error) => {
+                    setToggleState(toggle, !enabled);
+                    console.warn('[Pokemon Helper] Não foi possível salvar a preferência:', error);
+                });
+            });
         }
 
         function applyUpdatePreferences(preferences) {
@@ -124,6 +200,39 @@ function buildSettingsPanel(shell) {
                 console.warn('[Pokemon Helper] Não foi possível salvar a preferência de tooltips:', error);
             });
         });
+
+        PokemonHelperStorage.getUiPreferences().then((prefs) => {
+            bindCycle('ph-start-view', [
+                { value: 'last', label: 'ÚLTIMA USADA' },
+                { value: 'battle', label: 'ENCONTRO' },
+                { value: 'calc', label: 'CALCULADORA' },
+                { value: 'myPokemons', label: 'MEUS POKÉMON' }
+            ], prefs.startView, (startView) => PokemonHelperStorage.setUiPreferences({ startView }));
+
+            bindCycle('ph-start-collapsed', [
+                { value: 'remember', label: 'LEMBRAR' },
+                { value: 'collapsed', label: 'MINIMIZADO' },
+                { value: 'open', label: 'ABERTO' }
+            ], prefs.startCollapsed, (startCollapsed) => PokemonHelperStorage.setUiPreferences({ startCollapsed }));
+
+            bindPrefToggle('ph-auto-battle', prefs.autoSwitchToBattle,
+                (autoSwitchToBattle) => PokemonHelperStorage.setUiPreferences({ autoSwitchToBattle }));
+
+            bindPrefToggle('ph-mp-groups', prefs.screens.myPokemons.expandGroupsByDefault,
+                (v) => PokemonHelperStorage.setUiPreferences({ screens: { myPokemons: { expandGroupsByDefault: v } } }));
+            bindPrefToggle('ph-mp-pokemon', prefs.screens.myPokemons.expandPokemonByDefault,
+                (v) => PokemonHelperStorage.setUiPreferences({ screens: { myPokemons: { expandPokemonByDefault: v } } }));
+
+            const battleToggles = [
+                ['ph-bt-stats', 'showIvs'], ['ph-bt-weak', 'showWeaknesses'],
+                ['ph-bt-moves', 'showFoeMoves'], ['ph-bt-balls', 'showPokeballs'],
+                ['ph-bt-stages', 'showStatChanges'], ['ph-bt-mymoves', 'showMyMoves']
+            ];
+            battleToggles.forEach(([id, field]) => {
+                bindPrefToggle(id, prefs.screens.battle[field],
+                    (v) => PokemonHelperStorage.setUiPreferences({ screens: { battle: { [field]: v } } }));
+            });
+        }).catch((error) => console.warn('[Pokemon Helper] Não foi possível carregar preferências:', error));
 
         return panel;
 }

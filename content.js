@@ -550,6 +550,8 @@
             #${ID} .ph-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #8a8aa0; transition: transform .15s ease; }
             #${ID} .ph-toggle[aria-checked="true"] { background: #3f8f5a; }
             #${ID} .ph-toggle[aria-checked="true"]::after { background: #0c0c11; transform: translateX(18px); }
+            #${ID} .ph-cycle { min-width: 116px; height: 24px; padding: 0 8px; background: #16161f; border: 1px solid #2b2b39; color: #ffb545; font-family: 'Silkscreen', monospace; font-size: 10px; cursor: pointer; }
+            #${ID} .ph-subhead { font-family: 'Silkscreen', monospace; font-size: 9px; color: #63637a; letter-spacing: 1px; margin: 8px 0 6px; }
             #${ID} .ph-shortcut-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; margin-bottom: 10px; }
             #${ID} .ph-key { font-family: 'Silkscreen', monospace; font-size: 11px; color: #ffb545; background: #1a1a24; border: 1px solid #2b2b39; padding: 3px 7px; text-align: center; }
             #${ID} .ph-key-desc { font-size: 15px; color: #8a8aa0; }
