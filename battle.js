@@ -16,6 +16,18 @@ const openMoves = new Set();
 // disso a escolha do usuário de fechar/abrir é respeitada)
 const autoExpandedMoves = new Set();
 
+// seções visíveis da tela (Configurações → TELAS → BATALHA)
+let SCREEN_PREFS = Object.assign({}, PokemonHelperStorage.DEFAULT_UI_PREFERENCES.screens.battle);
+PokemonHelperStorage.getUiPreferences()
+    .then((prefs) => { SCREEN_PREFS = prefs.screens.battle; render(); })
+    .catch(() => {});
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes[PokemonHelperStorage.KEYS.uiPreferences]) return;
+    PokemonHelperStorage.getUiPreferences()
+        .then((prefs) => { SCREEN_PREFS = prefs.screens.battle; render(); })
+        .catch(() => {});
+});
+
 const escapeHtml = (value) => String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 const normalizeSpecies = (value) => String(value || '').trim().toLowerCase().replace(/[.']/g, '').replace(/[\s-]+/g, '_');
 const typeNames = (types) => [...new Set((types || []).map((id) => TYPE_MAPPER[id] || String(id).toLowerCase()).filter(Boolean))];
@@ -443,12 +455,14 @@ function render() {
             </div>`).join('')}</div>
     </div>`;
 
-    let html = `<div class="enc-screen">` + head + meta + ivsSection;
+    let html = `<div class="enc-screen">` + head + meta + (SCREEN_PREFS.showIvs ? ivsSection : '');
     if (!state.caught) html += bestPlay(foe);
-    html += renderWeaknesses(foe) + renderFoeMoves(foe);
-    html += renderBalls(foe) + renderStages();
+    if (SCREEN_PREFS.showWeaknesses) html += renderWeaknesses(foe);
+    if (SCREEN_PREFS.showFoeMoves) html += renderFoeMoves(foe);
+    if (SCREEN_PREFS.showPokeballs) html += renderBalls(foe);
+    if (SCREEN_PREFS.showStatChanges) html += renderStages();
     if (state.caught) html += '<div class="gotcha"><span class="gotcha-badge">GOTCHA</span><p>Pokémon capturado</p></div>';
-    else if (state.moves.length) html += `<div class="section"><div class="section-head"><span class="px-label">SEUS GOLPES</span></div><div class="rows">` +
+    else if (SCREEN_PREFS.showMyMoves && state.moves.length) html += `<div class="section"><div class="section-head"><span class="px-label">SEUS GOLPES</span></div><div class="rows">` +
         state.moves.map((move) => `<div class="row"><span class="label">${escapeHtml(move.name)}</span><span class="value">${move.pp} PP</span></div>`).join('') + '</div></div>';
     html += `</div>`;
     content.innerHTML = html;

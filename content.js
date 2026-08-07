@@ -37,17 +37,42 @@
         window.__pkmnHelperEnsurePending = true;
     }
 
-    PokemonHelperStorage.getOverlaySettings().then((storedSettings) => {
+    Promise.all([
+        PokemonHelperStorage.getOverlaySettings(),
+        PokemonHelperStorage.getUiPreferences()
+    ]).then(([storedSettings, prefs]) => {
         if (mode === 'ensure') window.__pkmnHelperEnsurePending = false;
+        window.__pkmnHelperUiPrefs = prefs;
         const settings = Object.assign({}, DEFAULT_SETTINGS, storedSettings);
         if (mode === 'ensure' && settings.open === false) return;
         settings.open = true;
+        // preferências de abertura: 'last'/'remember' preservam o comportamento
+        // atual (usa o que está persistido em overlaySettings)
+        if (prefs.startView !== 'last') settings.view = prefs.startView;
+        if (prefs.startCollapsed !== 'remember') settings.collapsed = prefs.startCollapsed === 'collapsed';
         build(settings);
     }).catch((error) => {
         if (mode === 'ensure') window.__pkmnHelperEnsurePending = false;
         console.warn('[Pokemon Helper] Não foi possível carregar as configurações:', error);
+        window.__pkmnHelperUiPrefs = window.__pkmnHelperUiPrefs || PokemonHelperStorage.DEFAULT_UI_PREFERENCES;
         build(Object.assign({}, DEFAULT_SETTINGS, { open: true }));
     });
+
+    function uiPrefs() {
+        return window.__pkmnHelperUiPrefs || PokemonHelperStorage.DEFAULT_UI_PREFERENCES;
+    }
+
+    if (!window.__pkmnHelperPrefsListenerAdded) {
+        window.__pkmnHelperPrefsListenerAdded = true;
+        chrome.storage.onChanged.addListener((changes, area) => {
+            if (area !== 'local' || !changes[PokemonHelperStorage.KEYS.uiPreferences]) return;
+            PokemonHelperStorage.getUiPreferences().then((prefs) => {
+                window.__pkmnHelperUiPrefs = prefs;
+                const container = document.getElementById(ID);
+                if (container) refreshShortcutLabels(container);
+            });
+        });
+    }
 
     function build(settings) {
         injectStyle();
@@ -73,12 +98,14 @@
         const header = document.createElement('div');
         header.className = 'ph-header';
 
+        const fmt = PokemonHelperShortcutUtils.formatCombo;
+        const shortcuts = uiPrefs().shortcuts;
         const { collapseBtn, maximizeBtn } = buildHeaderButtons(header, [
-            { icon: 'enc', tip: 'Encontro atual — tecla E', view: 'battle' },
-            { icon: 'calc', tip: 'Calculadora de tipos — tecla C', view: 'calc' },
-            { icon: 'team', tip: 'Meus Pokémon — tecla M', view: 'myPokemons' },
-            { icon: 'cfg', tip: 'Configurações — vírgula', view: 'settings' },
-        ], { tip: 'Minimizar — Esc' });
+            { icon: 'enc', tip: `Encontro atual — tecla ${fmt(shortcuts.battle)}`, view: 'battle' },
+            { icon: 'calc', tip: `Calculadora de tipos — tecla ${fmt(shortcuts.calc)}`, view: 'calc' },
+            { icon: 'team', tip: `Meus Pokémon — tecla ${fmt(shortcuts.myPokemons)}`, view: 'myPokemons' },
+            { icon: 'cfg', tip: `Configurações — tecla ${fmt(shortcuts.settings)}`, view: 'settings' },
+        ], { tip: `Minimizar — ${fmt(shortcuts.minimize)}` }, { tip: `Expandir — ${fmt(shortcuts.toggleFull)}` });
 
         // ---- corpo ----
         const body = document.createElement('div');
@@ -104,7 +131,11 @@
         chartFrame.className = 'ph-frame';
         chartFrame.src = chrome.runtime.getURL('chart.html');
 
-        const settingsPanel = buildSettingsPanel();
+        const settingsPanel = buildSettingsPanel({
+            getContainer: () => document.getElementById(ID),
+            dockedWidth, clampNum, applyBox, syncFullSide,
+            updateStatus, persist, currentSettings
+        });
 
         // syncFullSide (chamado no build()) roda ANTES desses iframes
         // terminarem de carregar, e a guarda de assinatura em __phFullSignature
@@ -285,22 +316,23 @@
             setActiveView(btn.dataset.view, container);
         });
 
-        const SHORTCUT_VIEWS = { e: 'battle', c: 'calc', m: 'myPokemons', ',': 'settings' };
         // a tabela 18×18 só aparece no modo expandido, ao lado das views de
         // conteúdo (syncFullSide) — estas são as views que a exibem
         const CHART_HOST_VIEWS = ['calc', 'battle'];
-        function handleShortcut(key) {
+        const VIEW_ACTIONS = { battle: 'battle', calc: 'calc', myPokemons: 'myPokemons', settings: 'settings' };
+
+        function performAction(action) {
             const container = document.getElementById(ID);
             if (!container || container.classList.contains('collapsed')) return;
             const settings = currentSettings(container);
-            if (SHORTCUT_VIEWS[key]) {
+            if (VIEW_ACTIONS[action]) {
                 delete container.dataset.preBattleView;
-                setActiveView(SHORTCUT_VIEWS[key], container);
-            } else if (key === 'f') {
+                setActiveView(VIEW_ACTIONS[action], container);
+            } else if (action === 'toggleFull') {
                 container.querySelector('.ph-maximize-btn')?.click();
-            } else if (key === 't') {
+            } else if (action === 'typeChart') {
                 // atalho dedicado da tabela de tipos: de qualquer tela, expande
-                // o painel já com a tabela à mostra; T de novo volta ao encaixado
+                // o painel já com a tabela à mostra; de novo, volta ao encaixado
                 const view = container.dataset.activeView || 'calc';
                 if (settings.maximized && CHART_HOST_VIEWS.includes(view)) {
                     container.querySelector('.ph-maximize-btn')?.click();
@@ -309,16 +341,25 @@
                     if (!CHART_HOST_VIEWS.includes(view)) setActiveView('calc', container);
                     if (!settings.maximized) container.querySelector('.ph-maximize-btn')?.click();
                 }
-            } else if (key === 'escape') {
+            } else if (action === 'minimize') {
                 if (settings.maximized) container.querySelector('.ph-maximize-btn')?.click();
                 else setCollapsed(container, settings, true);
             }
         }
+
+        // evtLike: KeyboardEvent ou o objeto serializado do shortcut-forwarder
+        function handleShortcut(evtLike) {
+            const combo = PokemonHelperShortcutUtils.comboFromEvent(evtLike);
+            if (!combo) return;
+            const shortcuts = uiPrefs().shortcuts;
+            const action = Object.keys(shortcuts).find((name) => shortcuts[name] === combo);
+            if (action) performAction(action);
+        }
         // atalhos só valem com o evento no painel (nunca no documento do jogo —
         // o jogo usa essas teclas pra gameplay)
         container.addEventListener('keydown', (event) => {
-            if (/INPUT|TEXTAREA/.test(event.target.tagName)) return;
-            handleShortcut(event.key.toLowerCase());
+            if (/INPUT|TEXTAREA|SELECT/.test(event.target.tagName)) return;
+            handleShortcut(event);
         });
         // registrado uma única vez em `window` (persiste entre toggles da
         // extensão, ao contrário do `container`, que é recriado do zero a cada
@@ -330,7 +371,7 @@
             window.addEventListener('message', (event) => {
                 const data = event.data;
                 if (!data || typeof data !== 'object') return;
-                if (data.type === 'panel-shortcut') handleShortcut(String(data.key).toLowerCase());
+                if (data.type === 'panel-shortcut') handleShortcut(data);
                 if (data.type === 'panel-exit-full') {
                     const overlay = document.getElementById(ID);
                     const settings = overlay && currentSettings(overlay);
@@ -398,6 +439,9 @@
                         clearTimeout(battleReturnTimer);
                         battleReturnTimer = null;
                     }
+                    // usuário pode desligar a troca automática pra aba Encontro;
+                    // sem preBattleView setado, o retorno automático também não roda
+                    if (uiPrefs().autoSwitchToBattle === false) return;
                     if (overlay.dataset.activeView !== 'battle' && !overlay.dataset.preBattleView) {
                         overlay.dataset.preBattleView = overlay.dataset.activeView || 'calc';
                     }
@@ -506,11 +550,19 @@
             #${ID} .ph-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #8a8aa0; transition: transform .15s ease; }
             #${ID} .ph-toggle[aria-checked="true"] { background: #3f8f5a; }
             #${ID} .ph-toggle[aria-checked="true"]::after { background: #0c0c11; transform: translateX(18px); }
+            #${ID} .ph-cycle { min-width: 116px; height: 24px; padding: 0 8px; background: #16161f; border: 1px solid #2b2b39; color: #ffb545; font-family: 'Silkscreen', monospace; font-size: 10px; cursor: pointer; }
+            #${ID} .ph-subhead { font-family: 'Silkscreen', monospace; font-size: 9px; color: #63637a; letter-spacing: 1px; margin: 8px 0 6px; }
             #${ID} .ph-shortcut-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; margin-bottom: 10px; }
             #${ID} .ph-key { font-family: 'Silkscreen', monospace; font-size: 11px; color: #ffb545; background: #1a1a24; border: 1px solid #2b2b39; padding: 3px 7px; text-align: center; }
+            #${ID} .ph-key-btn { cursor: pointer; min-width: 52px; }
+            #${ID} .ph-key-btn.capturing { color: #0c0c11; background: #ffb545; border-color: #ffb545; }
+            #${ID} .ph-shortcut-error { color: #e06c60; font-size: 12px; font-family: 'Silkscreen', monospace; min-height: 14px; margin: 0 0 8px; }
             #${ID} .ph-key-desc { font-size: 15px; color: #8a8aa0; }
             #${ID} .ph-hint { color: #8a8aa0; font-size: 13px; margin: 4px 0 12px; }
             #${ID} .ph-btn-shortcut { width: 100%; }
+            #${ID} .ph-data-feedback { font-family: 'Silkscreen', monospace; font-size: 10px; min-height: 13px; margin: 6px 0 0; }
+            #${ID} .ph-data-feedback.ok { color: #63bb5b; }
+            #${ID} .ph-data-feedback.err { color: #e06c60; }
             #${ID} .ph-resize-handle {
                 position: absolute;
                 z-index: 10;
@@ -564,129 +616,6 @@
         document.head.appendChild(style);
     }
 
-    function buildSettingsPanel() {
-        const panel = document.createElement('div');
-        panel.className = 'ph-settings';
-        panel.id = 'pokemon-settings-panel';
-        panel.innerHTML = `
-            <div class="ph-set-head" data-tip="Ajustes do painel">PAINEL</div>
-            <div class="ph-setting-row" data-tip="Largura do painel encaixado, de 250 a 380 px.">
-                <span class="ph-setting-label">Largura</span>
-                <button type="button" class="ph-step" id="ph-width-minus">-</button>
-                <span class="ph-width-value" id="ph-width-value"></span>
-                <button type="button" class="ph-step" id="ph-width-plus">+</button>
-            </div>
-            <div class="ph-setting-row">
-                <span class="ph-setting-label" id="ph-update-notifications-label">Avisar sobre atualizações</span>
-                <button type="button" class="ph-toggle" id="ph-update-notifications" role="switch" aria-checked="false" aria-labelledby="ph-update-notifications-label"></button>
-            </div>
-            <div class="ph-setting-row" id="ph-beta-channel-row" hidden>
-                <span class="ph-setting-label" id="ph-beta-channel-label">Canal beta</span>
-                <button type="button" class="ph-toggle" id="ph-beta-channel" role="switch" aria-checked="false" aria-labelledby="ph-beta-channel-label"></button>
-            </div>
-            <div class="ph-setting-row" data-tip="Desligue se as dicas atrapalharem durante a batalha.">
-                <span class="ph-setting-label" id="ph-tooltips-label">Tooltips ao passar o mouse</span>
-                <button type="button" class="ph-toggle" id="ph-tooltips" role="switch" aria-checked="true" aria-labelledby="ph-tooltips-label"></button>
-            </div>
-            <div class="ph-set-head">ATALHOS</div>
-            <div class="ph-shortcut-grid">
-                ${[['E', 'Encontro atual'], ['C', 'Calculadora de tipos'], ['M', 'Meus Pokémon'], [',', 'Configurações'],
-                   ['T', 'Tabela de tipos (expande o painel)'], ['F', 'Expandir / recolher'], ['ESC', 'Minimizar / voltar']]
-                    .map(([k, v]) => `<span class="ph-key">${k}</span><span class="ph-key-desc">${v}</span>`).join('')}
-            </div>
-            <p class="ph-hint">Os atalhos valem com o mouse/foco sobre o painel.</p>
-            <button type="button" class="ph-btn-shortcut px-btn" id="ph-set-shortcut">Configurar atalho do navegador</button>
-            <p class="ph-hint">Abre a página de atalhos do Chrome, onde dá pra definir a combinação que abre e fecha a extensão.</p>
-        `;
-
-        panel.querySelector('#ph-set-shortcut').addEventListener('click', () => {
-            chrome.runtime.sendMessage({ type: 'pkmn-helper-open-shortcuts' });
-        });
-
-        const notificationsToggle = panel.querySelector('#ph-update-notifications');
-        const betaToggle = panel.querySelector('#ph-beta-channel');
-        const betaRow = panel.querySelector('#ph-beta-channel-row');
-
-        function setToggleState(toggle, enabled) {
-            toggle.setAttribute('aria-checked', String(enabled));
-        }
-
-        function applyUpdatePreferences(preferences) {
-            setToggleState(notificationsToggle, preferences.notificationsEnabled);
-            setToggleState(betaToggle, preferences.betaChannelEnabled);
-            betaRow.hidden = !preferences.notificationsEnabled;
-        }
-
-        PokemonHelperStorage.getUpdatePreferences()
-            .then(applyUpdatePreferences)
-            .catch((error) => console.warn('[Pokemon Helper] Não foi possível carregar preferências de atualização:', error));
-
-        notificationsToggle.addEventListener('click', () => {
-            const notificationsEnabled = notificationsToggle.getAttribute('aria-checked') !== 'true';
-            setToggleState(notificationsToggle, notificationsEnabled);
-            betaRow.hidden = !notificationsEnabled;
-            PokemonHelperStorage.setUpdatePreferences({ notificationsEnabled }).catch((error) => {
-                setToggleState(notificationsToggle, !notificationsEnabled);
-                betaRow.hidden = notificationsEnabled;
-                console.warn('[Pokemon Helper] Não foi possível salvar a preferência de atualização:', error);
-            });
-        });
-
-        betaToggle.addEventListener('click', () => {
-            const betaChannelEnabled = betaToggle.getAttribute('aria-checked') !== 'true';
-            setToggleState(betaToggle, betaChannelEnabled);
-            PokemonHelperStorage.setUpdatePreferences({ betaChannelEnabled }).catch((error) => {
-                setToggleState(betaToggle, !betaChannelEnabled);
-                console.warn('[Pokemon Helper] Não foi possível salvar a preferência do beta:', error);
-            });
-        });
-
-        const widthValue = panel.querySelector('#ph-width-value');
-        function applyWidth(delta) {
-            const container = document.getElementById(ID);
-            // usa o MESMO objeto que arrastar/redimensionar/maximizar mutam
-            // (container.__phSettings), nunca uma cópia via currentSettings() —
-            // senão a próxima ação nesses outros caminhos reverte e persiste
-            // por cima da edição feita aqui.
-            const settings = container && container.__phSettings;
-            if (!container || !settings) return;
-            if (settings.maximized) {
-                settings.restoreWidth = clampNum(dockedWidth(settings) + delta, 250, 380, dockedWidth(settings));
-                container.dataset.restoreWidth = String(settings.restoreWidth);
-                syncFullSide(container, settings); // atualiza --ph-side-width já, pro caso o modo lado a lado esteja ativo
-            } else {
-                settings.width = clampNum(settings.width + delta, 250, 380, settings.width);
-                applyBox(container, settings);
-            }
-            widthValue.textContent = `${dockedWidth(settings)}px`;
-            updateStatus(container, settings);
-            persist(currentSettings(container));
-        }
-        panel.querySelector('#ph-width-minus').addEventListener('click', () => applyWidth(-20));
-        panel.querySelector('#ph-width-plus').addEventListener('click', () => applyWidth(20));
-        widthValue.textContent = '—';
-        setTimeout(() => { // preenche após o container existir
-            const container = document.getElementById(ID);
-            const settings = container && container.__phSettings;
-            if (settings) widthValue.textContent = `${dockedWidth(settings)}px`;
-        });
-
-        const tooltipsToggle = panel.querySelector('#ph-tooltips');
-        PokemonHelperStorage.getUiPreferences()
-            .then((preferences) => setToggleState(tooltipsToggle, preferences.tooltipsEnabled))
-            .catch(() => {});
-        tooltipsToggle.addEventListener('click', () => {
-            const tooltipsEnabled = tooltipsToggle.getAttribute('aria-checked') !== 'true';
-            setToggleState(tooltipsToggle, tooltipsEnabled);
-            PokemonHelperStorage.setUiPreferences({ tooltipsEnabled }).catch((error) => {
-                setToggleState(tooltipsToggle, !tooltipsEnabled);
-                console.warn('[Pokemon Helper] Não foi possível salvar a preferência de tooltips:', error);
-            });
-        });
-
-        return panel;
-    }
-
     function clampNum(value, min, max, fallback) {
         const n = parseInt(value, 10);
         if (Number.isNaN(n)) return fallback;
@@ -715,7 +644,29 @@
         const text = container.querySelector('.ph-status-text');
         if (!text) return;
         const mode = settings.maximized ? 'EXPANDIDO' : `ENCAIXADO ${settings.width}PX`;
-        text.textContent = `${dataSeen ? 'CONECTADO' : 'AGUARDANDO DADOS'} · ${mode} · F=EXPANDIR  ESC=MINIMIZAR`;
+        const fmt = PokemonHelperShortcutUtils.formatCombo;
+        const shortcuts = uiPrefs().shortcuts;
+        text.textContent = `${dataSeen ? 'CONECTADO' : 'AGUARDANDO DADOS'} · ${mode} · ${fmt(shortcuts.toggleFull)}=EXPANDIR  ${fmt(shortcuts.minimize)}=MINIMIZAR`;
+    }
+
+    // reaplica os textos que citam teclas — chamado quando os atalhos mudam
+    function refreshShortcutLabels(container) {
+        const fmt = PokemonHelperShortcutUtils.formatCombo;
+        const shortcuts = uiPrefs().shortcuts;
+        const tips = {
+            battle: `Encontro atual — tecla ${fmt(shortcuts.battle)}`,
+            calc: `Calculadora de tipos — tecla ${fmt(shortcuts.calc)}`,
+            myPokemons: `Meus Pokémon — tecla ${fmt(shortcuts.myPokemons)}`,
+            settings: `Configurações — tecla ${fmt(shortcuts.settings)}`
+        };
+        container.querySelectorAll('.ph-view-btn').forEach((btn) => {
+            if (tips[btn.dataset.view]) btn.dataset.tip = tips[btn.dataset.view];
+        });
+        const maximizeBtn = container.querySelector('.ph-maximize-btn');
+        if (maximizeBtn) maximizeBtn.dataset.tip = `Expandir — ${fmt(shortcuts.toggleFull)}`;
+        const collapseBtn = container.querySelector('.ph-collapse-btn');
+        if (collapseBtn) collapseBtn.dataset.tip = `Minimizar — ${fmt(shortcuts.minimize)}`;
+        updateStatus(container, currentSettings(container));
     }
 
     function syncFullSide(container, settings) {

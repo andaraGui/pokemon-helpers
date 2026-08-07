@@ -94,8 +94,10 @@ e recarregue a página do jogo.
    - **Meus Pokémon:** exibe a Party e as caixas do PC, com cards
      expansíveis, IVs, golpes, busca, ordenação e filtros avançados;
    - **Configurações:** ajusta a largura do painel, os avisos de
-     atualização (canais estável `main`/beta `develop`), os tooltips e
-     lista os atalhos de teclado.
+     atualização (canais estável `main`/beta `develop`), os tooltips,
+     comportamento, toggles por tela, atalhos de teclado (remapeáveis)
+     e dados (exportar/importar/restaurar) — veja "Configurações" mais
+     abaixo.
 
    A tabela de tipos completa fica junto da Calculadora — veja "modo
    full" abaixo.
@@ -103,9 +105,10 @@ e recarregue a página do jogo.
    tabela) e minimizar (`_`), e uma barra de status com um ponto verde
    piscando quando o painel está conectado ao jogo.
 4. Atalhos de teclado (valem com o mouse/foco sobre o painel, não na
-   página do jogo): `E` Encontro, `C` Calculadora, `M` Meus Pokémon, `,`
-   (vírgula) Configurações, `F` expandir/tabela completa, `Esc`
-   minimizar/voltar.
+   página do jogo): por padrão `E` Encontro, `C` Calculadora, `M` Meus
+   Pokémon, `,` (vírgula) Configurações, `T` tabela de tipos, `F`
+   expandir/recolher, `Esc` minimizar/voltar — todos remapeáveis na aba
+   Configurações (veja abaixo).
 5. **Modo full** (botão de expandir ou `F`): o painel ocupa 90% da
    largura da janela. Na Calculadora e no Encontro, a tabela de tipos
    completa aparece ao lado do conteúdo; em Meus Pokémon, a tela vira
@@ -118,6 +121,54 @@ e recarregue a página do jogo.
    durante a batalha).
 7. Algumas informações dependem dos dados enviados pelo jogo e aparecem
    depois que o personagem ou uma batalha é sincronizada.
+
+### Configurações
+
+A aba **Configurações** tem cinco blocos:
+
+- **PAINEL:** largura do painel encaixado, avisos de atualização/canal
+  beta e o toggle geral de tooltips (descrito acima).
+- **COMPORTAMENTO:**
+  - **View inicial** — cicla entre `ÚLTIMA USADA` (lembra a última aba
+    aberta), `ENCONTRO`, `CALCULADORA` e `MEUS POKÉMON`: define qual aba
+    o painel mostra ao carregar a página.
+  - **Estado ao abrir** — cicla entre `LEMBRAR` (estado da sessão
+    anterior), `MINIMIZADO` e `ABERTO`: define se o painel começa
+    encaixado/expandido ou como bolha minimizada ao carregar a página.
+  - **Auto-troca no encontro** — liga/desliga a troca automática pra
+    aba Encontro quando uma batalha começa (o sync passivo de party/PC
+    pode continuar trocando de Calculadora pra Meus Pokémon sozinho,
+    independente desse toggle — ele controla só a troca pra Encontro).
+- **TELAS:** toggles específicos por tela, aplicados ao vivo:
+  - *Meus Pokémon:* grupos já expandidos e Pokémon já expandidos (o
+    estado inicial dos cards ao abrir a tela).
+  - *Batalha:* liga/desliga individualmente as seções IVs/Stats,
+    Fraquezas dele, Golpes dele, Pokébolas, Atributos alterados e Seus
+    golpes.
+- **ATALHOS:** cada ação (Encontro, Calculadora, Meus Pokémon,
+  Configurações, Tabela de tipos, Expandir/recolher, Minimizar/voltar)
+  tem um botão com a combinação atual. Clique nele e pressione a nova
+  combinação (tecla única ou com modificadores Ctrl/Alt/Shift) para
+  remapear; uma combinação já usada por outra ação é recusada, com
+  aviso indicando qual ação já é dona dela. `Esc` cancela a captura sem
+  salvar — a única forma de reatribuir `Esc` a uma ação é pelo botão
+  **Restaurar atalhos padrão**, que devolve as sete ações aos valores
+  originais. Combinações reservadas pelo próprio navegador (ex:
+  `Ctrl+W`, `Ctrl+T`) podem não chegar até a extensão. Há também um
+  atalho separado, de nível de navegador, pra abrir/fechar o overlay
+  inteiro — o botão **Configurar atalho do navegador** leva direto pra
+  `chrome://extensions/shortcuts`.
+- **DADOS:**
+  - **Exportar configurações** baixa um `.json` só com preferências
+    (largura, comportamento, toggles, atalhos, avisos de atualização) —
+    nunca pokédex ou golpes descobertos.
+  - **Importar configurações** troca um arquivo desse formato e
+    mescla os campos conhecidos presentes nele nas configurações
+    atuais (o que não aparece no arquivo mantém o valor atual); um
+    arquivo inválido ou de outro formato é recusado sem tocar em nada.
+  - **Restaurar tudo** pede confirmação e devolve todas as
+    configurações (painel, comportamento, telas, atalhos) ao padrão de
+    fábrica.
 
 Toda alteração de código bumpa a versão em `manifest.json`, pra confirmar
 que o reload pegou os arquivos novos.

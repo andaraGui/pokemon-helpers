@@ -31,6 +31,20 @@ const UI_STATE = {
     fullCollapsed: new Set()
 };
 
+// defaults de expansão da tela (Configurações → TELAS). Começa com os
+// defaults síncronos: se o primeiro payload chegar antes da leitura do
+// storage resolver, o comportamento é o padrão — aceitável e raro.
+let SCREEN_PREFS = Object.assign({}, PokemonHelperStorage.DEFAULT_UI_PREFERENCES.screens.myPokemons);
+PokemonHelperStorage.getUiPreferences()
+    .then((prefs) => { SCREEN_PREFS = prefs.screens.myPokemons; })
+    .catch(() => {});
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes[PokemonHelperStorage.KEYS.uiPreferences]) return;
+    PokemonHelperStorage.getUiPreferences()
+        .then((prefs) => { SCREEN_PREFS = prefs.screens.myPokemons; })
+        .catch(() => {});
+});
+
 let filterController = null;
 
 function escapeHtml(value) {
@@ -316,8 +330,16 @@ function syncUiState() {
     const groupKeys = DATA_STATE.groups.map((group) => group.key);
     const pokemonKeys = new Set(DATA_STATE.sourcePokemon.map((viewModel) => viewModel.key));
     groupKeys.forEach((key) => {
-        if (!UI_STATE.initialized || !UI_STATE.knownGroups.has(key)) UI_STATE.expandedGroups.add(key);
+        // grupos novos (ou primeira carga) nascem expandidos só se a preferência mandar
+        if ((!UI_STATE.initialized || !UI_STATE.knownGroups.has(key)) && SCREEN_PREFS.expandGroupsByDefault) {
+            UI_STATE.expandedGroups.add(key);
+        }
     });
+    // pokémon: o default de expansão só vale na primeira carga da tela —
+    // depois disso, quem manda é o toggle manual do usuário (expandedPokemon)
+    if (!UI_STATE.initialized && SCREEN_PREFS.expandPokemonByDefault) {
+        pokemonKeys.forEach((key) => UI_STATE.expandedPokemon.add(key));
+    }
     UI_STATE.expandedGroups.forEach((key) => {
         if (!groupKeys.includes(key)) UI_STATE.expandedGroups.delete(key);
     });
@@ -607,13 +629,4 @@ window.addEventListener('message', (event) => {
     if (full !== UI_STATE.forceExpandAll) UI_STATE.fullCollapsed.clear();
     UI_STATE.forceExpandAll = full;
     render();
-});
-
-// atalhos do painel (repassados pelo shell) — ver content.js/handleShortcut
-window.addEventListener('keydown', (event) => {
-    if (/INPUT|TEXTAREA/.test(event.target.tagName)) return;
-    const key = event.key.toLowerCase();
-    if (['e', 'c', 't', 'm', ',', 'f', 'escape'].includes(key)) {
-        window.parent.postMessage({ type: 'panel-shortcut', key }, '*');
-    }
 });
