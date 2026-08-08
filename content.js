@@ -92,6 +92,7 @@
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') requestDiskCheck();
         });
+        window.addEventListener('focus', requestDiskCheck);
         requestDiskCheck();
     }
 

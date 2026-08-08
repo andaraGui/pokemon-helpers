@@ -208,10 +208,7 @@ async function checkDiskVersion() {
     lastDiskCheckAt = now;
     try {
         const installedManifest = chrome.runtime.getManifest();
-        const manifestName = installedManifest.browser_specific_settings
-            ? 'manifest.firefox.json'
-            : 'manifest.json';
-        const response = await fetch(chrome.runtime.getURL(manifestName), { cache: 'no-store' });
+        const response = await fetch(chrome.runtime.getURL('manifest.json'), { cache: 'no-store' });
         const diskManifest = await response.json();
         if (!/^\d+(\.\d+)*$/.test(diskManifest.version || '')) return;
         if (compareVersions(diskManifest.version, installedManifest.version) > 0) {

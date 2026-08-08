@@ -1,6 +1,12 @@
 @echo off
 chcp 65001 >nul
+setlocal
+
 cd /d "%~dp0"
+if errorlevel 1 (
+    echo Nao foi possivel entrar na pasta do script.
+    goto :fim
+)
 
 echo ============================================
 echo   Infinity MMO Extension - Atualizador
@@ -27,7 +33,7 @@ if not exist ".git" (
 for /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD') do set BRANCH=%%b
 if not "%BRANCH%"=="main" (
     echo Voltando para a versao estavel ^(branch main^)...
-    git switch main
+    git checkout main
     if errorlevel 1 (
         echo.
         echo Nao foi possivel voltar para a branch main.
@@ -35,6 +41,8 @@ if not "%BRANCH%"=="main" (
         goto :fim
     )
 )
+
+for /f "delims=" %%h in ('git rev-parse HEAD') do set BEFORE_HEAD=%%h
 
 echo Baixando a versao mais recente...
 git pull --ff-only
@@ -46,12 +54,18 @@ if errorlevel 1 (
     goto :fim
 )
 
+for /f "delims=" %%h in ('git rev-parse HEAD') do set AFTER_HEAD=%%h
+
 echo.
 echo ============================================
-echo Atualizado! A extensao vai se recarregar
-echo sozinha em alguns instantes.
-echo.
-echo Depois, recarregue a pagina do jogo (F5).
+if "%BEFORE_HEAD%"=="%AFTER_HEAD%" (
+    echo Voce ja esta na versao mais recente.
+) else (
+    echo Atualizado! A extensao vai se recarregar
+    echo sozinha em alguns instantes.
+    echo.
+    echo Depois, recarregue a pagina do jogo (F5).
+)
 echo ============================================
 
 :fim

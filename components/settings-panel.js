@@ -80,7 +80,7 @@ function buildSettingsPanel(shell) {
             <div class="ph-set-head">ATALHOS</div>
             <div class="ph-shortcut-grid" id="ph-shortcut-grid"></div>
             <p class="ph-shortcut-error" id="ph-shortcut-error"></p>
-            <p class="ph-hint">Os atalhos valem com o mouse/foco sobre o painel. Clique numa tecla e pressione a nova combinação (ESC cancela; ESC só volta a uma ação via restaurar padrões). Combinações do navegador (Ctrl+W, Ctrl+T…) podem não funcionar.</p>
+            <p class="ph-hint">Os atalhos funcionam na página do jogo com o overlay carregado (a tecla configurada é consumida; o jogo não a recebe). Clique numa tecla e pressione a nova combinação (ESC cancela a captura e não pode ser usado como atalho). Combinações do navegador (Ctrl+W, Ctrl+T…) podem não funcionar.</p>
             <button type="button" class="ph-btn-shortcut px-btn" id="ph-shortcut-reset">Restaurar atalhos padrão</button>
             <button type="button" class="ph-btn-shortcut px-btn" id="ph-set-shortcut">Configurar atalho do navegador</button>
             <p class="ph-hint">Abre a página de atalhos do Chrome, onde dá pra definir a combinação que abre e fecha a extensão.</p>

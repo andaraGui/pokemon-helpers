@@ -75,7 +75,8 @@ Esta opção exige o [Git](https://git-scm.com/) instalado no computador.
 `atualizar.bat`, dentro da pasta da extensão, e aguarde a mensagem de
 sucesso. A extensão percebe a versão nova e se recarrega sozinha em alguns
 instantes — depois é só recarregar a página do jogo (F5). Rodar `git pull`
-num terminal dentro da pasta tem o mesmo efeito.
+num terminal dentro da pasta tem o mesmo efeito. O `atualizar.bat` é para
+Windows; em outros sistemas, use `git pull` mesmo.
 
 **Se instalou pelo ZIP:** baixe novamente o ZIP e extraia por cima da pasta
 já usada. A extensão também se recarrega sozinha nesse fluxo — depois,
@@ -84,6 +85,10 @@ recarregue a página do jogo (F5).
 Se a checagem automática de versão estiver ligada (veja
 [Configurações](#configurações)), uma faixa de aviso aparece no overlay
 quando houver uma versão mais nova disponível.
+
+Se, depois de cerca de um minuto, a extensão não se recarregar sozinha,
+abra `chrome://extensions`, encontre o card da extensão e clique no botão
+de recarregar (↻).
 
 ## Primeiros passos
 
@@ -276,19 +281,20 @@ Encontro:
 ## Atalhos de teclado
 
 Os 7 atalhos internos são remapeáveis em
-[Configurações → ATALHOS](#configurações) e só funcionam com o mouse/foco
-sobre o painel do overlay (nunca disparam na página do jogo).
+[Configurações → ATALHOS](#configurações) e funcionam na página do jogo
+com o overlay carregado: a tecla configurada é consumida pela extensão
+e o jogo não a recebe. Campos de texto (como o chat) ficam imunes.
 
 | Ação | Atalho padrão | Onde funciona |
 |---|---|---|
 | Abrir/fechar o overlay inteiro | `Ctrl+Shift+Y` | Atalho do navegador (`chrome://extensions/shortcuts`) |
-| Encontro | `1` | Com foco no painel |
-| Calculadora | `2` | Com foco no painel |
-| Meus Pokémon | `3` | Com foco no painel |
-| Configurações | `4` | Com foco no painel |
-| Tabela de tipos | `T` | Com foco no painel |
-| Expandir/recolher (modo full) | `F` | Com foco no painel |
-| Minimizar/voltar | `` ` `` (crase) | Com foco no painel |
+| Encontro | `1` | Na página do jogo (a tecla não chega ao jogo) |
+| Calculadora | `2` | Na página do jogo (a tecla não chega ao jogo) |
+| Meus Pokémon | `3` | Na página do jogo (a tecla não chega ao jogo) |
+| Configurações | `4` | Na página do jogo (a tecla não chega ao jogo) |
+| Tabela de tipos | `T` | Na página do jogo (a tecla não chega ao jogo) |
+| Expandir/recolher (modo full) | `F` | Na página do jogo (a tecla não chega ao jogo) |
+| Minimizar/voltar | `` ` `` (crase) | Na página do jogo (a tecla não chega ao jogo) |
 
 ## Limitações e observações
 
@@ -298,8 +304,8 @@ sobre o painel do overlay (nunca disparam na página do jogo).
   Pokémon...".
 - Combinações reservadas pelo próprio navegador (ex.: `Ctrl+W`, `Ctrl+T`)
   podem não chegar até a extensão, mesmo remapeadas.
-- `Esc` só pode voltar a ser um atalho pelo botão "Restaurar atalhos
-  padrão" — cancelar uma captura com `Esc` nunca o atribui a uma ação.
+- `Esc` cancela a captura de um novo atalho e não pode ser usado como
+  atalho para nenhuma ação.
 - Os golpes listados em "Golpes dele" nem sempre são o moveset real: fora
   de batalhas de treinador (ou sem dados de treinador correspondentes), a
   lista é uma estimativa heurística por nível; a origem de cada lista
